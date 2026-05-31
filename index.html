@@ -23,12 +23,23 @@
           <span id="detail-value">4</span>
         </label>
       </div>
+      <div class="toolbar-group mode-group">
+        <button class="mode-btn active" data-mode="object">Объект</button>
+        <button class="mode-btn" data-mode="vertex">Вершины</button>
+        <button class="mode-btn" data-mode="edge">Рёбра</button>
+        <button class="mode-btn" data-mode="face">Грани</button>
+      </div>
       <div class="toolbar-group">
         <button id="btn-undo" class="toolbar-btn" title="Отменить">Отменить</button>
         <button id="btn-redo" class="toolbar-btn" title="Повторить">Повторить</button>
       </div>
       <div class="toolbar-group">
-        <button id="btn-export" class="toolbar-btn" title="Экспорт">Экспорт</button>
+        <button id="btn-grid-snap" class="toolbar-btn toggle-btn" title="Привязка к сетке">Сетка</button>
+        <button id="btn-shading" class="toolbar-btn toggle-btn" title="Переключить затенение">Плоское</button>
+      </div>
+      <div class="toolbar-group">
+        <button id="btn-export-glb" class="toolbar-btn" title="Экспорт GLB">Экспорт GLB</button>
+        <button id="btn-export-obj" class="toolbar-btn" title="Экспорт OBJ">Экспорт OBJ</button>
       </div>
     </div>
 
@@ -40,6 +51,10 @@
       <button class="tool-btn" data-tool="rotate">Вращение</button>
       <button class="tool-btn" data-tool="scale">Масштаб</button>
       <button class="tool-btn" data-tool="extrude">Экструзия</button>
+      <hr class="tool-separator" />
+      <button class="tool-btn" data-tool="duplicate">Дублировать</button>
+      <button class="tool-btn" data-tool="delete">Удалить</button>
+      <button class="tool-btn" data-tool="paint">Покраска</button>
     </div>
 
     <!-- Viewport -->
@@ -85,6 +100,8 @@
       <span id="vertex-count">Вершины: 0</span>
       <span class="status-separator">|</span>
       <span id="face-count">Грани: 0</span>
+      <span class="status-separator">|</span>
+      <span id="mode-display">Режим: Объект</span>
     </div>
   </div>
 

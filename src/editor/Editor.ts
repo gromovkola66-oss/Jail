@@ -3,9 +3,21 @@ import { Viewport } from './Viewport';
 import { SelectionManager } from './SelectionManager';
 import { History, Action } from './History';
 import { PrimitiveFactory } from './primitives/PrimitiveFactory';
+import { ModeManager, EditMode } from './modes/ModeManager';
+import { ObjectMode } from './modes/ObjectMode';
+import { VertexMode } from './modes/VertexMode';
+import { EdgeMode } from './modes/EdgeMode';
+import { FaceMode } from './modes/FaceMode';
+import { GridSnap } from './GridSnap';
+import { ShadingManager } from './shading/ShadingManager';
+import { GLTFExporter } from './export/GLTFExporter';
+import { OBJExporter } from './export/OBJExporter';
+import { ExtrudeTool } from './tools/ExtrudeTool';
+import { DeleteTool } from './tools/DeleteTool';
+import { DuplicateTool } from './tools/DuplicateTool';
 
 export type PrimitiveType = 'cube' | 'sphere' | 'cylinder' | 'plane' | 'cone';
-export type ToolMode = 'select' | 'move' | 'rotate' | 'scale' | 'extrude';
+export type ToolMode = 'select' | 'move' | 'rotate' | 'scale' | 'extrude' | 'duplicate' | 'delete' | 'paint';
 
 export interface SceneStats {
   vertices: number;
@@ -19,6 +31,19 @@ export class Editor {
   public primitiveFactory: PrimitiveFactory;
   public currentTool: ToolMode = 'select';
 
+  public modeManager: ModeManager;
+  public objectMode: ObjectMode;
+  public vertexMode: VertexMode;
+  public edgeMode: EdgeMode;
+  public faceMode: FaceMode;
+  public gridSnap: GridSnap;
+  public shadingManager: ShadingManager;
+  public gltfExporter: GLTFExporter;
+  public objExporter: OBJExporter;
+  public extrudeTool: ExtrudeTool;
+  public deleteTool: DeleteTool;
+  public duplicateTool: DuplicateTool;
+
   private statsListeners: ((stats: SceneStats) => void)[] = [];
 
   constructor(container: HTMLElement) {
@@ -30,6 +55,94 @@ export class Editor {
     );
     this.history = new History();
     this.primitiveFactory = new PrimitiveFactory();
+
+    // Mode management
+    this.modeManager = new ModeManager();
+    this.objectMode = new ObjectMode(
+      this.viewport.camera,
+      this.viewport.renderer,
+      this.viewport.scene,
+      this.viewport.controls,
+      this.history
+    );
+    this.vertexMode = new VertexMode(
+      this.viewport.scene,
+      this.viewport.camera,
+      container,
+      this.history
+    );
+    this.edgeMode = new EdgeMode(
+      this.viewport.scene,
+      this.viewport.camera,
+      container,
+      this.history
+    );
+    this.faceMode = new FaceMode(
+      this.viewport.scene,
+      this.viewport.camera,
+      container,
+      this.history
+    );
+
+    // Tools
+    this.gridSnap = new GridSnap();
+    this.shadingManager = new ShadingManager(this.viewport.scene);
+    this.gltfExporter = new GLTFExporter();
+    this.objExporter = new OBJExporter();
+    this.extrudeTool = new ExtrudeTool(this.history);
+    this.deleteTool = new DeleteTool(this.viewport.scene, this.history);
+    this.duplicateTool = new DuplicateTool(this.viewport.scene, this.history);
+
+    // Activate object mode by default
+    this.objectMode.activate();
+
+    // Wire up mode changes
+    this.modeManager.onModeChange((mode) => this.handleModeChange(mode));
+
+    // Wire up selection changes to modes
+    this.selectionManager.onSelectionChange((obj) => {
+      const mode = this.modeManager.getMode();
+      if (mode === 'object') {
+        this.objectMode.attach(obj);
+      } else if (mode === 'vertex') {
+        this.vertexMode.updateMesh(obj);
+      } else if (mode === 'edge') {
+        this.edgeMode.updateMesh(obj);
+      } else if (mode === 'face') {
+        this.faceMode.updateMesh(obj);
+      }
+    });
+  }
+
+  private handleModeChange(mode: EditMode): void {
+    // Deactivate all modes
+    this.objectMode.deactivate();
+    this.vertexMode.deactivate();
+    this.edgeMode.deactivate();
+    this.faceMode.deactivate();
+
+    const selected = this.selectionManager.getSelected();
+
+    // Activate new mode
+    switch (mode) {
+      case 'object':
+        this.objectMode.activate();
+        if (selected) this.objectMode.attach(selected);
+        break;
+      case 'vertex':
+        this.vertexMode.activate(selected);
+        break;
+      case 'edge':
+        this.edgeMode.activate(selected);
+        break;
+      case 'face':
+        this.faceMode.activate(selected);
+        break;
+    }
+  }
+
+  public setMode(mode: EditMode): void {
+    this.modeManager.setMode(mode);
   }
 
   public addPrimitive(type: PrimitiveType, detail: number = 4): void {
@@ -87,6 +200,78 @@ export class Editor {
 
   public setTool(tool: ToolMode): void {
     this.currentTool = tool;
+
+    // Update object mode transform based on tool
+    if (this.modeManager.getMode() === 'object') {
+      switch (tool) {
+        case 'move':
+          this.objectMode.setTransformMode('translate');
+          break;
+        case 'rotate':
+          this.objectMode.setTransformMode('rotate');
+          break;
+        case 'scale':
+          this.objectMode.setTransformMode('scale');
+          break;
+      }
+    }
+
+    // Handle painting
+    if (tool === 'paint') {
+      this.faceMode.setPaintingEnabled(true);
+    } else {
+      this.faceMode.setPaintingEnabled(false);
+    }
+  }
+
+  public duplicate(): void {
+    const selected = this.selectionManager.getSelected();
+    if (selected) {
+      const clone = this.duplicateTool.duplicate(selected);
+      this.selectionManager.select(clone);
+      this.notifyStatsChange();
+    }
+  }
+
+  public deleteSelected(): void {
+    const selected = this.selectionManager.getSelected();
+    if (!selected) return;
+
+    const mode = this.modeManager.getMode();
+    if (mode === 'object') {
+      this.deleteTool.deleteObject(selected);
+      this.selectionManager.select(null);
+      this.notifyStatsChange();
+    } else if (mode === 'face') {
+      const faceIdx = this.faceMode.getSelectedFaceIndex();
+      if (faceIdx >= 0) {
+        this.deleteTool.deleteFace(selected, faceIdx);
+        this.notifyStatsChange();
+      }
+    }
+  }
+
+  public extrudeSelected(): void {
+    const selected = this.selectionManager.getSelected();
+    if (!selected) return;
+    if (this.modeManager.getMode() !== 'face') return;
+    const faceIdx = this.faceMode.getSelectedFaceIndex();
+    if (faceIdx >= 0) {
+      this.extrudeTool.extrude(selected, faceIdx);
+      this.notifyStatsChange();
+    }
+  }
+
+  public exportGLTF(): void {
+    this.gltfExporter.exportScene(this.viewport.scene);
+  }
+
+  public exportOBJ(): void {
+    this.objExporter.exportScene(this.viewport.scene);
+  }
+
+  public toggleShading(): void {
+    this.shadingManager.toggleShading();
   }
 
   public getStats(): SceneStats {
@@ -113,7 +298,7 @@ export class Editor {
     this.statsListeners.push(callback);
   }
 
-  private notifyStatsChange(): void {
+  public notifyStatsChange(): void {
     const stats = this.getStats();
     this.statsListeners.forEach(cb => cb(stats));
   }

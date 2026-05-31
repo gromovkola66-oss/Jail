@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Implement edit modes (Object/Vertex/Edge/Face), vertex manipulation tools (move/scale/rotate for sub-object elements), face extrusion, deletion of vertices/edges/faces, object duplication, grid snapping, per-face color painting with color palette, flat/smooth shading toggle, and export to glTF/GLB and OBJ formats.",
-  "status": "pending",
+  "status": "in_progress",
   "steps": [
     "Create src/editor/modes/ModeManager.ts - manages switching between Object, Vertex, Edge, Face modes. Updates UI to show current mode. Adds mode toggle buttons to the toolbar.",
     "Create src/editor/modes/ObjectMode.ts - select entire objects, move/rotate/scale with TransformControls from Three.js.",
