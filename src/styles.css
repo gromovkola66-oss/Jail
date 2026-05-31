@@ -348,3 +348,17 @@ body {
 .status-separator {
   color: #0f3460;
 }
+
+/* Mirror axis buttons */
+.mirror-axis-btn {
+  padding: 4px 8px !important;
+  font-size: 12px !important;
+  min-width: 28px;
+  text-align: center;
+}
+
+.mirror-axis-btn.active {
+  background: #4a90d9;
+  border-color: #6ab0f9;
+  color: #ffffff;
+}

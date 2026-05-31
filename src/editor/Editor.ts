@@ -15,6 +15,7 @@ import { OBJExporter } from './export/OBJExporter';
 import { ExtrudeTool } from './tools/ExtrudeTool';
 import { DeleteTool } from './tools/DeleteTool';
 import { DuplicateTool } from './tools/DuplicateTool';
+import { MirrorTool } from './tools/MirrorTool';
 
 export type PrimitiveType = 'cube' | 'sphere' | 'cylinder' | 'plane' | 'cone';
 export type ToolMode = 'select' | 'move' | 'rotate' | 'scale' | 'extrude' | 'duplicate' | 'delete' | 'paint';
@@ -43,6 +44,7 @@ export class Editor {
   public extrudeTool: ExtrudeTool;
   public deleteTool: DeleteTool;
   public duplicateTool: DuplicateTool;
+  public mirrorTool: MirrorTool;
 
   private statsListeners: ((stats: SceneStats) => void)[] = [];
 
@@ -94,6 +96,10 @@ export class Editor {
     this.extrudeTool = new ExtrudeTool(this.history);
     this.deleteTool = new DeleteTool(this.viewport.scene, this.history);
     this.duplicateTool = new DuplicateTool(this.viewport.scene, this.history);
+    this.mirrorTool = new MirrorTool();
+
+    // Pass mirror tool to vertex mode
+    this.vertexMode.setMirrorTool(this.mirrorTool);
 
     // Activate object mode by default
     this.objectMode.activate();
@@ -283,6 +289,17 @@ export class Editor {
 
   public toggleShading(): void {
     this.shadingManager.toggleShading();
+  }
+
+  public toggleMirror(): void {
+    this.mirrorTool.toggle(this.viewport.scene);
+  }
+
+  public applyMirror(): void {
+    const selected = this.selectionManager.getSelected();
+    if (!selected) return;
+    this.mirrorTool.applyMirror(selected, this.history);
+    this.notifyStatsChange();
   }
 
   public getStats(): SceneStats {

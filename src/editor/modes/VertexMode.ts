@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { History, Action } from '../History';
 import { GridSnap } from '../GridSnap';
+import { MirrorTool } from '../tools/MirrorTool';
 
 export class VertexMode {
   private scene: THREE.Scene;
@@ -19,6 +20,8 @@ export class VertexMode {
   private dragOffset: THREE.Vector3;
   private startPos: THREE.Vector3;
   private active: boolean = false;
+  private mirrorTool: MirrorTool | null = null;
+  private mirrorStartLocal: THREE.Vector3 | null = null;
 
   private onMouseDownBound: (e: MouseEvent) => void;
   private onMouseMoveBound: (e: MouseEvent) => void;
@@ -67,6 +70,10 @@ export class VertexMode {
 
   public isActive(): boolean {
     return this.active;
+  }
+
+  public setMirrorTool(tool: MirrorTool): void {
+    this.mirrorTool = tool;
   }
 
   public updateMesh(mesh: THREE.Mesh | null): void {
@@ -160,6 +167,15 @@ export class VertexMode {
       this.dragPlane.setFromNormalAndCoplanarPoint(camDir, marker.position);
       this.startPos.copy(marker.position);
 
+      // Capture mirrored start position
+      if (this.mirrorTool && this.mirrorTool.isEnabled() && this.targetMesh) {
+        const startLocal = this.startPos.clone();
+        this.targetMesh.worldToLocal(startLocal);
+        this.mirrorStartLocal = this.mirrorTool.mirrorPosition(startLocal);
+      } else {
+        this.mirrorStartLocal = null;
+      }
+
       event.stopPropagation();
       event.preventDefault();
     }
@@ -198,6 +214,22 @@ export class VertexMode {
         positions.setXYZ(i, localPos.x, localPos.y, localPos.z);
       }
     }
+
+    // Mirror: move the mirrored vertex symmetrically
+    if (this.mirrorTool && this.mirrorTool.isEnabled() && this.mirrorStartLocal) {
+      const mirroredTarget = this.mirrorTool.mirrorPosition(localPos);
+      const ms = this.mirrorStartLocal;
+      for (let i = 0; i < positions.count; i++) {
+        if (
+          Math.abs(positions.getX(i) - ms.x) < 0.0001 &&
+          Math.abs(positions.getY(i) - ms.y) < 0.0001 &&
+          Math.abs(positions.getZ(i) - ms.z) < 0.0001
+        ) {
+          positions.setXYZ(i, mirroredTarget.x, mirroredTarget.y, mirroredTarget.z);
+        }
+      }
+    }
+
     positions.needsUpdate = true;
     this.targetMesh.geometry.computeVertexNormals();
     this.targetMesh.geometry.computeBoundingSphere();
@@ -229,6 +261,11 @@ export class VertexMode {
       const endLocal = endPos.clone();
       mesh.worldToLocal(endLocal);
 
+      // Mirror data for undo/redo
+      const hasMirror = !!(this.mirrorTool && this.mirrorTool.isEnabled() && this.mirrorStartLocal);
+      const mirrorStartL = this.mirrorStartLocal ? this.mirrorStartLocal.clone() : null;
+      const mirrorEndL = hasMirror && this.mirrorTool ? this.mirrorTool.mirrorPosition(endLocal) : null;
+
       const action: Action = {
         description: 'Переместить вершину',
         execute: () => {
@@ -240,6 +277,17 @@ export class VertexMode {
               Math.abs(positions.getZ(i) - startLocal.z) < 0.0001
             ) {
               positions.setXYZ(i, endLocal.x, endLocal.y, endLocal.z);
+            }
+          }
+          if (hasMirror && mirrorStartL && mirrorEndL) {
+            for (let i = 0; i < positions.count; i++) {
+              if (
+                Math.abs(positions.getX(i) - mirrorStartL.x) < 0.0001 &&
+                Math.abs(positions.getY(i) - mirrorStartL.y) < 0.0001 &&
+                Math.abs(positions.getZ(i) - mirrorStartL.z) < 0.0001
+              ) {
+                positions.setXYZ(i, mirrorEndL.x, mirrorEndL.y, mirrorEndL.z);
+              }
             }
           }
           positions.needsUpdate = true;
@@ -256,6 +304,17 @@ export class VertexMode {
               positions.setXYZ(i, startLocal.x, startLocal.y, startLocal.z);
             }
           }
+          if (hasMirror && mirrorStartL && mirrorEndL) {
+            for (let i = 0; i < positions.count; i++) {
+              if (
+                Math.abs(positions.getX(i) - mirrorEndL.x) < 0.0001 &&
+                Math.abs(positions.getY(i) - mirrorEndL.y) < 0.0001 &&
+                Math.abs(positions.getZ(i) - mirrorEndL.z) < 0.0001
+              ) {
+                positions.setXYZ(i, mirrorStartL.x, mirrorStartL.y, mirrorStartL.z);
+              }
+            }
+          }
           positions.needsUpdate = true;
           mesh.geometry.computeVertexNormals();
         },
@@ -264,6 +323,7 @@ export class VertexMode {
       this.history.record(action);
     }
 
+    this.mirrorStartLocal = null;
     event.stopPropagation();
   }
 }

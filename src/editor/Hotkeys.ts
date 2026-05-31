@@ -68,6 +68,13 @@ export class Hotkeys {
       case 'p':
         this.setTool('paint');
         break;
+      case 'm':
+        this.editor.toggleMirror();
+        const mirrorBtn = document.getElementById('btn-mirror');
+        if (mirrorBtn) {
+          mirrorBtn.classList.toggle('active', this.editor.mirrorTool.isEnabled());
+        }
+        break;
       case '1':
         this.setMode('object');
         break;

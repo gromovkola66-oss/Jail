@@ -84,6 +84,39 @@ function init(): void {
   if (exportObjBtn) {
     exportObjBtn.addEventListener('click', () => editor.exportOBJ());
   }
+
+  // Mirror buttons
+  const mirrorBtn = document.getElementById('btn-mirror');
+  if (mirrorBtn) {
+    mirrorBtn.addEventListener('click', () => {
+      editor.toggleMirror();
+      mirrorBtn.classList.toggle('active', editor.mirrorTool.isEnabled());
+    });
+  }
+
+  const mirrorAxisBtns = document.querySelectorAll<HTMLButtonElement>('.mirror-axis-btn');
+  const mirrorAxes: Record<string, 'x' | 'y' | 'z'> = {
+    'btn-mirror-x': 'x',
+    'btn-mirror-y': 'y',
+    'btn-mirror-z': 'z',
+  };
+  mirrorAxisBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const axis = mirrorAxes[btn.id];
+      if (axis) {
+        editor.mirrorTool.setAxis(axis, editor.viewport.scene);
+        mirrorAxisBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      }
+    });
+  });
+
+  const mirrorApplyBtn = document.getElementById('btn-mirror-apply');
+  if (mirrorApplyBtn) {
+    mirrorApplyBtn.addEventListener('click', () => {
+      editor.applyMirror();
+    });
+  }
 }
 
 document.addEventListener('DOMContentLoaded', init);
