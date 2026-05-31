@@ -117,6 +117,22 @@ function init(): void {
       editor.applyMirror();
     });
   }
+
+  // Subdivide button
+  const subdivideBtn = document.getElementById('btn-subdivide');
+  if (subdivideBtn) {
+    subdivideBtn.addEventListener('click', () => {
+      editor.subdivideSelected();
+    });
+  }
+
+  // Decimate button
+  const decimateBtn = document.getElementById('btn-decimate');
+  if (decimateBtn) {
+    decimateBtn.addEventListener('click', () => {
+      editor.decimateSelected();
+    });
+  }
 }
 
 document.addEventListener('DOMContentLoaded', init);

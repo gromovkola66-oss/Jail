@@ -16,6 +16,8 @@ import { ExtrudeTool } from './tools/ExtrudeTool';
 import { DeleteTool } from './tools/DeleteTool';
 import { DuplicateTool } from './tools/DuplicateTool';
 import { MirrorTool } from './tools/MirrorTool';
+import { SubdivideTool } from './tools/SubdivideTool';
+import { DecimateTool } from './tools/DecimateTool';
 
 export type PrimitiveType = 'cube' | 'sphere' | 'cylinder' | 'plane' | 'cone';
 export type ToolMode = 'select' | 'move' | 'rotate' | 'scale' | 'extrude' | 'duplicate' | 'delete' | 'paint';
@@ -45,6 +47,8 @@ export class Editor {
   public deleteTool: DeleteTool;
   public duplicateTool: DuplicateTool;
   public mirrorTool: MirrorTool;
+  public subdivideTool: SubdivideTool;
+  public decimateTool: DecimateTool;
 
   private statsListeners: ((stats: SceneStats) => void)[] = [];
 
@@ -97,6 +101,8 @@ export class Editor {
     this.deleteTool = new DeleteTool(this.viewport.scene, this.history);
     this.duplicateTool = new DuplicateTool(this.viewport.scene, this.history);
     this.mirrorTool = new MirrorTool();
+    this.subdivideTool = new SubdivideTool();
+    this.decimateTool = new DecimateTool();
 
     // Pass mirror tool to vertex mode
     this.vertexMode.setMirrorTool(this.mirrorTool);
@@ -299,6 +305,20 @@ export class Editor {
     const selected = this.selectionManager.getSelected();
     if (!selected) return;
     this.mirrorTool.applyMirror(selected, this.history);
+    this.notifyStatsChange();
+  }
+
+  public subdivideSelected(): void {
+    const selected = this.selectionManager.getSelected();
+    if (!selected) return;
+    this.subdivideTool.subdivide(selected, this.history);
+    this.notifyStatsChange();
+  }
+
+  public decimateSelected(): void {
+    const selected = this.selectionManager.getSelected();
+    if (!selected) return;
+    this.decimateTool.decimate(selected, this.history);
     this.notifyStatsChange();
   }
 
