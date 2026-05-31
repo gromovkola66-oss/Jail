@@ -1,0 +1,7 @@
+{
+  "task_id": "task-lowpoly-editor",
+  "task_description": "Build a browser-based low-poly 3D model editor with Three.js. Includes 3D viewport, primitive creation, edit modes (object/vertex/edge/face), manipulation tools, face color painting, flat/smooth shading toggle, undo/redo, and export to glTF/OBJ. Russian language UI.",
+  "status": "in_progress",
+  "feature_order": ["FEAT-001", "FEAT-002"],
+  "blocked_reason": null
+}

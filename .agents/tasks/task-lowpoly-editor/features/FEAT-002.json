@@ -1,0 +1,49 @@
+{
+  "id": "FEAT-002",
+  "type": "feat",
+  "description": "Implement edit modes (Object/Vertex/Edge/Face), vertex manipulation tools (move/scale/rotate for sub-object elements), face extrusion, deletion of vertices/edges/faces, object duplication, grid snapping, per-face color painting with color palette, flat/smooth shading toggle, and export to glTF/GLB and OBJ formats.",
+  "status": "pending",
+  "steps": [
+    "Create src/editor/modes/ModeManager.ts - manages switching between Object, Vertex, Edge, Face modes. Updates UI to show current mode. Adds mode toggle buttons to the toolbar.",
+    "Create src/editor/modes/ObjectMode.ts - select entire objects, move/rotate/scale with TransformControls from Three.js.",
+    "Create src/editor/modes/VertexMode.ts - display vertices as small spheres/points on selected mesh, allow selecting individual vertices, move them with transform gizmo. Updates geometry in real-time.",
+    "Create src/editor/modes/EdgeMode.ts - highlight edges on selected mesh, allow selecting edges (pairs of vertices), move/transform edges together.",
+    "Create src/editor/modes/FaceMode.ts - highlight individual faces on hover, allow selecting faces, move/transform selected faces.",
+    "Create src/editor/tools/ExtrudeTool.ts - when in Face mode with face(s) selected, extrude pushes the face outward creating new side geometry. Integrates with History for undo.",
+    "Create src/editor/tools/DeleteTool.ts - delete selected vertices/edges/faces depending on current mode. Rebuilds geometry after deletion. Integrates with History.",
+    "Create src/editor/tools/DuplicateTool.ts - in Object mode, duplicate selected object with offset position. Integrates with History.",
+    "Create src/editor/tools/TransformTool.ts - unified move/rotate/scale tool that works in all modes, applying transformations to selected elements (objects in Object mode, vertices in Vertex mode, etc.). Supports grid snapping.",
+    "Create src/editor/GridSnap.ts - grid snapping utility that quantizes positions to configurable grid size. Toggle on/off via UI button.",
+    "Create src/editor/painting/FacePainter.ts - in Face mode, click a face to apply the currently selected color. Modifies vertex colors or face materials. Shows color on the mesh immediately.",
+    "Create src/ui/ColorPalette.ts - color palette widget in the right panel with preset colors and a color picker input. Stores current selected color for face painting.",
+    "Create src/editor/shading/ShadingManager.ts - toggle between flat shading (flatShading: true, no vertex normal interpolation) and smooth shading (computed smooth normals). Applies to all objects or selected object.",
+    "Create src/editor/export/GLTFExporter.ts - export scene to glTF/GLB format using Three.js GLTFExporter addon. Triggers file download.",
+    "Create src/editor/export/OBJExporter.ts - export scene to OBJ format using Three.js OBJExporter addon. Triggers file download.",
+    "Update src/ui/Toolbar.ts to add export buttons (Export glTF, Export OBJ) and mode toggle buttons.",
+    "Update src/ui/ToolPanel.ts to show context-appropriate tools based on current mode.",
+    "Integrate all new systems with the History (undo/redo) system so all operations are undoable."
+  ],
+  "acceptance_criteria": [
+    "Can switch between Object, Vertex, Edge, and Face modes via UI buttons",
+    "In Vertex mode, individual vertices are visible and can be moved",
+    "In Edge mode, edges are highlighted and can be selected",
+    "In Face mode, faces are highlighted on hover and can be selected",
+    "Extrude tool works on selected faces in Face mode",
+    "Delete removes selected elements in any edit mode",
+    "Duplicate creates a copy of selected object in Object mode",
+    "Grid snapping can be toggled and snaps object/vertex positions to grid",
+    "Face painting applies color to clicked faces",
+    "Color palette allows selecting colors for painting",
+    "Flat/Smooth shading toggle changes rendering style on objects",
+    "Export to glTF/GLB downloads a valid file",
+    "Export to OBJ downloads a valid file",
+    "All operations integrate with undo/redo",
+    "npm run build completes without errors after all changes"
+  ],
+  "verification": [
+    "Run 'cd /projects/sandbox/Jail && npm run build' and confirm it exits with code 0",
+    "Check that dist/ folder is created with bundled output containing all new modules"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}

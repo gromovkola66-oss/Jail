@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LowPoly Редактор</title>
+  <link rel="stylesheet" href="/src/styles.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Top Toolbar -->
+    <div id="toolbar">
+      <div class="toolbar-group">
+        <button id="btn-cube" class="toolbar-btn" title="Куб">Куб</button>
+        <button id="btn-sphere" class="toolbar-btn" title="Сфера">Сфера</button>
+        <button id="btn-cylinder" class="toolbar-btn" title="Цилиндр">Цилиндр</button>
+        <button id="btn-plane" class="toolbar-btn" title="Плоскость">Плоскость</button>
+        <button id="btn-cone" class="toolbar-btn" title="Конус">Конус</button>
+      </div>
+      <div class="toolbar-group">
+        <label class="toolbar-label">Количество полигонов:
+          <input type="range" id="detail-slider" min="1" max="64" value="4" />
+          <span id="detail-value">4</span>
+        </label>
+      </div>
+      <div class="toolbar-group">
+        <button id="btn-undo" class="toolbar-btn" title="Отменить">Отменить</button>
+        <button id="btn-redo" class="toolbar-btn" title="Повторить">Повторить</button>
+      </div>
+      <div class="toolbar-group">
+        <button id="btn-export" class="toolbar-btn" title="Экспорт">Экспорт</button>
+      </div>
+    </div>
+
+    <!-- Left Tool Panel -->
+    <div id="tool-panel">
+      <h3 class="panel-title">Инструменты</h3>
+      <button class="tool-btn active" data-tool="select">Выделение</button>
+      <button class="tool-btn" data-tool="move">Перемещение</button>
+      <button class="tool-btn" data-tool="rotate">Вращение</button>
+      <button class="tool-btn" data-tool="scale">Масштаб</button>
+      <button class="tool-btn" data-tool="extrude">Экструзия</button>
+    </div>
+
+    <!-- Viewport -->
+    <div id="viewport"></div>
+
+    <!-- Right Properties Panel -->
+    <div id="properties-panel">
+      <h3 class="panel-title">Свойства объекта</h3>
+      <div id="properties-content">
+        <div class="property-group">
+          <label class="property-label">Позиция</label>
+          <div class="property-row">
+            <label>X <input type="number" id="pos-x" step="0.1" value="0" /></label>
+            <label>Y <input type="number" id="pos-y" step="0.1" value="0" /></label>
+            <label>Z <input type="number" id="pos-z" step="0.1" value="0" /></label>
+          </div>
+        </div>
+        <div class="property-group">
+          <label class="property-label">Вращение</label>
+          <div class="property-row">
+            <label>X <input type="number" id="rot-x" step="1" value="0" /></label>
+            <label>Y <input type="number" id="rot-y" step="1" value="0" /></label>
+            <label>Z <input type="number" id="rot-z" step="1" value="0" /></label>
+          </div>
+        </div>
+        <div class="property-group">
+          <label class="property-label">Масштаб</label>
+          <div class="property-row">
+            <label>X <input type="number" id="scale-x" step="0.1" value="1" /></label>
+            <label>Y <input type="number" id="scale-y" step="0.1" value="1" /></label>
+            <label>Z <input type="number" id="scale-z" step="0.1" value="1" /></label>
+          </div>
+        </div>
+      </div>
+      <h3 class="panel-title">Палитра цветов</h3>
+      <div id="color-palette">
+        <input type="color" id="object-color" value="#4a90d9" />
+      </div>
+    </div>
+
+    <!-- Bottom Status Bar -->
+    <div id="status-bar">
+      <span id="vertex-count">Вершины: 0</span>
+      <span class="status-separator">|</span>
+      <span id="face-count">Грани: 0</span>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
