@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LowPoly Редактор</title>
-  <script type="module" crossorigin src="./assets/index-CH86QSZR.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-DuLimsTH.css">
+  <script type="module" crossorigin src="./assets/index-BMcM-yDd.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-LaW9bvVm.css">
 </head>
 <body>
   <div id="app">
@@ -38,7 +38,19 @@
         <button id="btn-grid-snap" class="toolbar-btn toggle-btn" title="Привязка к сетке">Сетка</button>
         <button id="btn-shading" class="toolbar-btn toggle-btn" title="Переключить затенение">Плоское</button>
       </div>
+      <div class="toolbar-group mirror-group">
+        <button id="btn-mirror" class="toolbar-btn toggle-btn" title="Зеркальное отражение">Зеркало</button>
+        <button id="btn-mirror-x" class="toolbar-btn mirror-axis-btn active" title="Ось X">X</button>
+        <button id="btn-mirror-y" class="toolbar-btn mirror-axis-btn" title="Ось Y">Y</button>
+        <button id="btn-mirror-z" class="toolbar-btn mirror-axis-btn" title="Ось Z">Z</button>
+        <button id="btn-mirror-apply" class="toolbar-btn" title="Применить зеркало">Применить</button>
+      </div>
       <div class="toolbar-group">
+        <button id="btn-subdivide" class="toolbar-btn" title="Подразделить меш">Подразделить</button>
+        <button id="btn-decimate" class="toolbar-btn" title="Упростить меш">Упростить</button>
+      </div>
+      <div class="toolbar-group">
+        <button id="btn-import" class="toolbar-btn" title="Импорт модели">Импорт</button>
         <button id="btn-export-glb" class="toolbar-btn" title="Экспорт GLB">Экспорт GLB</button>
         <button id="btn-export-obj" class="toolbar-btn" title="Экспорт OBJ">Экспорт OBJ</button>
       </div>
@@ -105,8 +117,11 @@
       <span id="face-count">Грани: 0</span>
       <span class="status-separator">|</span>
       <span id="mode-display">Режим: Объект</span>
+      <span class="status-separator">|</span>
+      <span id="selection-count"></span>
     </div>
   </div>
 
+  <input type="file" id="file-import" accept=".obj,.glb,.gltf" style="display:none" />
 </body>
 </html>
