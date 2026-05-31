@@ -201,15 +201,6 @@ export class VertexMode {
     const marker = this.markers[markerIdx];
     const endPos = marker.position.clone();
     const mesh = this.targetMesh;
-    const vertIdx = this.selectedVertexIndex;
-    const oldLocalPos = new THREE.Vector3();
-    mesh.worldToLocal(this.startPos.clone());
-    oldLocalPos.copy(this.startPos);
-    mesh.worldToLocal(oldLocalPos);
-    const newLocalPos = new THREE.Vector3();
-    mesh.worldToLocal(endPos.clone());
-    newLocalPos.copy(endPos);
-    mesh.worldToLocal(newLocalPos);
 
     // Record history if moved
     if (!this.startPos.equals(endPos)) {

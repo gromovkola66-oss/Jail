@@ -110,32 +110,40 @@ export class PropertiesPanel {
     }
   }
 
+  private setIfNotFocused(el: HTMLInputElement, value: string): void {
+    if (document.activeElement !== el) {
+      el.value = value;
+    }
+  }
+
   private updateDisplay(object: THREE.Mesh | null): void {
     if (!object) {
-      this.posX.value = '0';
-      this.posY.value = '0';
-      this.posZ.value = '0';
-      this.rotX.value = '0';
-      this.rotY.value = '0';
-      this.rotZ.value = '0';
-      this.scaleX.value = '1';
-      this.scaleY.value = '1';
-      this.scaleZ.value = '1';
+      this.setIfNotFocused(this.posX, '0');
+      this.setIfNotFocused(this.posY, '0');
+      this.setIfNotFocused(this.posZ, '0');
+      this.setIfNotFocused(this.rotX, '0');
+      this.setIfNotFocused(this.rotY, '0');
+      this.setIfNotFocused(this.rotZ, '0');
+      this.setIfNotFocused(this.scaleX, '1');
+      this.setIfNotFocused(this.scaleY, '1');
+      this.setIfNotFocused(this.scaleZ, '1');
       return;
     }
 
-    this.posX.value = object.position.x.toFixed(2);
-    this.posY.value = object.position.y.toFixed(2);
-    this.posZ.value = object.position.z.toFixed(2);
-    this.rotX.value = THREE.MathUtils.radToDeg(object.rotation.x).toFixed(1);
-    this.rotY.value = THREE.MathUtils.radToDeg(object.rotation.y).toFixed(1);
-    this.rotZ.value = THREE.MathUtils.radToDeg(object.rotation.z).toFixed(1);
-    this.scaleX.value = object.scale.x.toFixed(2);
-    this.scaleY.value = object.scale.y.toFixed(2);
-    this.scaleZ.value = object.scale.z.toFixed(2);
+    this.setIfNotFocused(this.posX, object.position.x.toFixed(2));
+    this.setIfNotFocused(this.posY, object.position.y.toFixed(2));
+    this.setIfNotFocused(this.posZ, object.position.z.toFixed(2));
+    this.setIfNotFocused(this.rotX, THREE.MathUtils.radToDeg(object.rotation.x).toFixed(1));
+    this.setIfNotFocused(this.rotY, THREE.MathUtils.radToDeg(object.rotation.y).toFixed(1));
+    this.setIfNotFocused(this.rotZ, THREE.MathUtils.radToDeg(object.rotation.z).toFixed(1));
+    this.setIfNotFocused(this.scaleX, object.scale.x.toFixed(2));
+    this.setIfNotFocused(this.scaleY, object.scale.y.toFixed(2));
+    this.setIfNotFocused(this.scaleZ, object.scale.z.toFixed(2));
 
-    // Update color picker
-    const material = object.material as THREE.MeshStandardMaterial;
-    this.colorInput.value = '#' + material.color.getHexString();
+    // Update color picker (only if not focused)
+    if (document.activeElement !== this.colorInput) {
+      const material = object.material as THREE.MeshStandardMaterial;
+      this.colorInput.value = '#' + material.color.getHexString();
+    }
   }
 }
