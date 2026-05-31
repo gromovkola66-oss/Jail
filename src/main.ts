@@ -7,6 +7,13 @@ import { ColorPalette } from './ui/ColorPalette';
 import { Outliner } from './ui/Outliner';
 import { Hotkeys } from './editor/Hotkeys';
 import { EditMode } from './editor/modes/ModeManager';
+import { ThemeToggle } from './ui/ThemeToggle';
+import { ContextMenu } from './ui/ContextMenu';
+import { CameraPresets } from './ui/CameraPresets';
+import { Screenshot } from './ui/Screenshot';
+import { ProjectSerializer } from './editor/ProjectSerializer';
+import { LightManager } from './editor/LightManager';
+import { SkyboxManager } from './editor/SkyboxManager';
 
 function init(): void {
   const viewport = document.getElementById('viewport');
@@ -23,7 +30,42 @@ function init(): void {
   new PropertiesPanel(editor);
   new StatusBar(editor);
   new Outliner(editor);
-  new Hotkeys(editor);
+
+  // New features
+  new ThemeToggle(editor);
+  new ContextMenu(editor);
+  new CameraPresets(editor);
+  new Screenshot(editor);
+  new LightManager(editor);
+  new SkyboxManager(editor);
+
+  // Project serialization
+  const projectSerializer = new ProjectSerializer(editor);
+
+  const hotkeys = new Hotkeys(editor);
+
+  // Wire save/load hotkeys
+  const fileProject = document.getElementById('file-project') as HTMLInputElement | null;
+
+  hotkeys.onSave = () => {
+    projectSerializer.saveProject();
+  };
+
+  hotkeys.onOpen = () => {
+    if (fileProject) {
+      fileProject.click();
+    }
+  };
+
+  if (fileProject) {
+    fileProject.addEventListener('change', () => {
+      const file = fileProject.files?.[0];
+      if (file) {
+        projectSerializer.loadProject(file);
+        fileProject.value = '';
+      }
+    });
+  }
 
   // Color palette
   const colorPalette = new ColorPalette();

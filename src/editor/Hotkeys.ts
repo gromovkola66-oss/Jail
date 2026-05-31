@@ -4,6 +4,8 @@ import { EditMode } from './modes/ModeManager';
 export class Hotkeys {
   private editor: Editor;
   private onKeyDownBound: (e: KeyboardEvent) => void;
+  public onSave: (() => void) | null = null;
+  public onOpen: (() => void) | null = null;
 
   constructor(editor: Editor) {
     this.editor = editor;
@@ -38,6 +40,20 @@ export class Hotkeys {
     if (ctrl && key === 'z') {
       e.preventDefault();
       this.editor.undo();
+      return;
+    }
+
+    // Ctrl+S - save project
+    if (ctrl && key === 's') {
+      e.preventDefault();
+      if (this.onSave) this.onSave();
+      return;
+    }
+
+    // Ctrl+O - open project
+    if (ctrl && key === 'o') {
+      e.preventDefault();
+      if (this.onOpen) this.onOpen();
       return;
     }
 

@@ -53,6 +53,22 @@
         <button id="btn-export-glb" class="toolbar-btn" title="Экспорт GLB">Экспорт GLB</button>
         <button id="btn-export-obj" class="toolbar-btn" title="Экспорт OBJ">Экспорт OBJ</button>
       </div>
+      <div class="toolbar-group">
+        <button id="btn-theme" class="toolbar-btn toggle-btn" title="Переключить тему">Тема</button>
+      </div>
+      <div class="toolbar-group camera-group">
+        <button id="btn-cam-front" class="toolbar-btn" title="Вид спереди">Перед</button>
+        <button id="btn-cam-back" class="toolbar-btn" title="Вид сзади">Зад</button>
+        <button id="btn-cam-left" class="toolbar-btn" title="Вид слева">Лево</button>
+        <button id="btn-cam-right" class="toolbar-btn" title="Вид справа">Право</button>
+        <button id="btn-cam-top" class="toolbar-btn" title="Вид сверху">Верх</button>
+        <button id="btn-cam-bottom" class="toolbar-btn" title="Вид снизу">Низ</button>
+        <button id="btn-cam-save" class="toolbar-btn" title="Сохранить камеру">Сохранить камеру</button>
+        <button id="btn-cam-load" class="toolbar-btn" title="Загрузить камеру">Загрузить камеру</button>
+      </div>
+      <div class="toolbar-group">
+        <button id="btn-screenshot" class="toolbar-btn" title="Сделать снимок">Снимок</button>
+      </div>
     </div>
 
     <!-- Left Tool Panel -->
@@ -107,6 +123,8 @@
       <div id="color-palette">
         <input type="color" id="object-color" value="#4a90d9" />
       </div>
+      <div id="lights-section"></div>
+      <div id="skybox-section"></div>
     </div>
 
     <!-- Bottom Status Bar -->
@@ -122,6 +140,7 @@
   </div>
 
   <input type="file" id="file-import" accept=".obj,.glb,.gltf" style="display:none" />
+  <input type="file" id="file-project" accept=".json" style="display:none" />
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

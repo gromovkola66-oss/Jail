@@ -373,3 +373,276 @@ body {
   outline: 3px dashed #4a90d9;
   outline-offset: -3px;
 }
+
+/* Context Menu */
+.context-menu {
+  position: fixed;
+  background: #16213e;
+  border: 1px solid #1a4a7a;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 10000;
+  min-width: 150px;
+  padding: 4px 0;
+}
+
+.context-menu-item {
+  padding: 8px 16px;
+  font-size: 13px;
+  color: #e0e0e0;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.context-menu-item:hover {
+  background: #4a90d9;
+  color: #ffffff;
+}
+
+/* Outliner rename input */
+.outliner-rename-input {
+  background: #0f3460;
+  color: #e0e0e0;
+  border: 1px solid #4a90d9;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 13px;
+  width: 100%;
+  outline: none;
+}
+
+/* Outliner drag states */
+.outliner-item.dragging {
+  opacity: 0.5;
+}
+
+.outliner-item.drag-over-item {
+  border-top: 2px solid #4a90d9;
+}
+
+/* Light Manager */
+.light-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  margin-bottom: 6px;
+  background: #0f3460;
+  border-radius: 4px;
+  border: 1px solid #1a4a7a;
+}
+
+.light-label {
+  font-size: 12px;
+  font-weight: bold;
+  color: #4a90d9;
+}
+
+.light-item input[type="color"] {
+  width: 32px;
+  height: 24px;
+  border: 1px solid #1a4a7a;
+  border-radius: 3px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.light-item input[type="number"] {
+  width: 60px;
+  background: #16213e;
+  color: #e0e0e0;
+  border: 1px solid #1a4a7a;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 11px;
+}
+
+.light-add-group {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  align-items: center;
+}
+
+.light-type-select {
+  background: #0f3460;
+  color: #e0e0e0;
+  border: 1px solid #1a4a7a;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* Skybox presets */
+.skybox-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.skybox-presets .toolbar-btn {
+  font-size: 11px;
+  padding: 4px 8px;
+}
+
+/* Light theme */
+body.light-theme {
+  background: #f5f5f5;
+  color: #333333;
+}
+
+body.light-theme #app {
+  background: #f5f5f5;
+}
+
+body.light-theme #toolbar {
+  background: #ffffff;
+  border-bottom-color: #ddd;
+}
+
+body.light-theme #tool-panel {
+  background: #ffffff;
+  border-right-color: #ddd;
+}
+
+body.light-theme #properties-panel {
+  background: #ffffff;
+  border-left-color: #ddd;
+}
+
+body.light-theme #status-bar {
+  background: #ffffff;
+  border-top-color: #ddd;
+  color: #666;
+}
+
+body.light-theme .toolbar-btn {
+  background: #e8e8e8;
+  color: #333;
+  border-color: #ccc;
+}
+
+body.light-theme .toolbar-btn:hover {
+  background: #d0d0d0;
+  border-color: #4a90d9;
+}
+
+body.light-theme .toolbar-btn.toggle-btn.active {
+  background: #4a90d9;
+  color: #fff;
+  border-color: #3a7bc8;
+}
+
+body.light-theme .mode-btn {
+  background: #e8e8e8;
+  color: #333;
+  border-right-color: #ccc;
+}
+
+body.light-theme .mode-btn:hover {
+  background: #d0d0d0;
+}
+
+body.light-theme .mode-btn.active {
+  background: #4a90d9;
+  color: #fff;
+}
+
+body.light-theme .tool-btn {
+  background: #e8e8e8;
+  color: #333;
+  border-color: #ccc;
+}
+
+body.light-theme .tool-btn:hover {
+  background: #d0d0d0;
+  border-color: #4a90d9;
+}
+
+body.light-theme .tool-btn.active {
+  background: #4a90d9;
+  color: #fff;
+}
+
+body.light-theme .panel-title {
+  color: #666;
+}
+
+body.light-theme .property-label {
+  color: #666;
+}
+
+body.light-theme .property-row label {
+  color: #555;
+}
+
+body.light-theme .property-row input[type="number"] {
+  background: #f0f0f0;
+  color: #333;
+  border-color: #ccc;
+}
+
+body.light-theme .property-row input[type="number"]:focus {
+  border-color: #4a90d9;
+}
+
+body.light-theme .outliner-item:hover {
+  background: #e0e0e0;
+}
+
+body.light-theme .outliner-item.selected {
+  background: #4a90d9;
+  color: #fff;
+}
+
+body.light-theme .toolbar-label {
+  color: #666;
+}
+
+body.light-theme .status-separator {
+  color: #ccc;
+}
+
+body.light-theme .context-menu {
+  background: #ffffff;
+  border-color: #ccc;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+body.light-theme .context-menu-item {
+  color: #333;
+}
+
+body.light-theme .context-menu-item:hover {
+  background: #4a90d9;
+  color: #fff;
+}
+
+body.light-theme .outliner-rename-input {
+  background: #f0f0f0;
+  color: #333;
+  border-color: #4a90d9;
+}
+
+body.light-theme .light-item {
+  background: #f0f0f0;
+  border-color: #ccc;
+}
+
+body.light-theme .light-item input[type="number"] {
+  background: #fff;
+  color: #333;
+  border-color: #ccc;
+}
+
+body.light-theme .light-type-select {
+  background: #f0f0f0;
+  color: #333;
+  border-color: #ccc;
+}
+
+body.light-theme #viewport {
+  background: #e0e0e0;
+}
+
