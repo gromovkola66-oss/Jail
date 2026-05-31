@@ -2,7 +2,7 @@
   "id": "FEAT-002",
   "type": "feat",
   "description": "Implement edit modes (Object/Vertex/Edge/Face), vertex manipulation tools (move/scale/rotate for sub-object elements), face extrusion, deletion of vertices/edges/faces, object duplication, grid snapping, per-face color painting with color palette, flat/smooth shading toggle, and export to glTF/GLB and OBJ formats.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Create src/editor/modes/ModeManager.ts - manages switching between Object, Vertex, Edge, Face modes. Updates UI to show current mode. Adds mode toggle buttons to the toolbar.",
     "Create src/editor/modes/ObjectMode.ts - select entire objects, move/rotate/scale with TransformControls from Three.js.",
@@ -45,5 +45,5 @@
     "Check that dist/ folder is created with bundled output containing all new modules"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "Build succeeds with expected Three.js chunk size warning (596KB > 500KB). TypeScript compiles cleanly with --noEmit. TransformControls event type required casting event.value as boolean due to @types/three typing the event value as unknown. faceIndex from raycaster intersection is typed as number|null|undefined so used != null check."
 }
