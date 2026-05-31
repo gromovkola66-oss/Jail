@@ -1,5 +1,8 @@
 import * as THREE from 'three';
 import { GLTFExporter as ThreeGLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
+import { Timeline } from '../animation/Timeline';
+import { BoneSystem } from '../animation/BoneSystem';
+import { AnimationPlayer } from '../animation/AnimationPlayer';
 
 export class GLTFExporter {
   private exporter: ThreeGLTFExporter;
@@ -8,14 +11,56 @@ export class GLTFExporter {
     this.exporter = new ThreeGLTFExporter();
   }
 
-  public exportScene(scene: THREE.Scene): void {
+  public exportScene(scene: THREE.Scene, timeline?: Timeline, boneSystem?: BoneSystem): void {
     // Filter exportable objects (exclude grid, lights, helpers)
     const exportScene = new THREE.Scene();
+    const animations: THREE.AnimationClip[] = [];
+
     scene.traverse((object) => {
       if (object instanceof THREE.Mesh && !(object instanceof THREE.GridHelper)) {
-        exportScene.add(object.clone());
+        // Skip internal editor objects
+        if (object.userData?.isEditorInternal) return;
+        if (object.name.startsWith('__')) return;
+
+        if (boneSystem && boneSystem.hasSkeleton(object)) {
+          // Export as SkinnedMesh with skeleton
+          const skelData = boneSystem.getSkeletonData(object);
+          if (skelData) {
+            const clonedMesh = object.clone();
+            const skinnedMesh = new THREE.SkinnedMesh(clonedMesh.geometry, clonedMesh.material);
+            skinnedMesh.position.copy(object.position);
+            skinnedMesh.rotation.copy(object.rotation);
+            skinnedMesh.scale.copy(object.scale);
+            skinnedMesh.name = object.name;
+
+            // Clone bones for export
+            const rootBoneClone = skelData.rootBone.clone(true);
+            const bones = this.collectBones(rootBoneClone);
+            const skeleton = new THREE.Skeleton(bones);
+            skinnedMesh.add(rootBoneClone);
+            skinnedMesh.bind(skeleton);
+
+            exportScene.add(skinnedMesh);
+
+            // Build animation clip if timeline has keyframes
+            if (timeline && timeline.getAllKeyframes().size > 0) {
+              const player = new AnimationPlayer(timeline, boneSystem, scene);
+              const clip = player.buildClip(timeline, boneSystem, object);
+              if (clip) {
+                animations.push(clip);
+              }
+            }
+          }
+        } else {
+          exportScene.add(object.clone());
+        }
       }
     });
+
+    const options: any = { binary: true };
+    if (animations.length > 0) {
+      options.animations = animations;
+    }
 
     this.exporter.parse(
       exportScene,
@@ -26,8 +71,18 @@ export class GLTFExporter {
       (error) => {
         console.error('GLTFExporter error:', error);
       },
-      { binary: true }
+      options
     );
+  }
+
+  private collectBones(root: THREE.Object3D): THREE.Bone[] {
+    const bones: THREE.Bone[] = [];
+    root.traverse((obj) => {
+      if (obj instanceof THREE.Bone) {
+        bones.push(obj);
+      }
+    });
+    return bones;
   }
 
   private download(blob: Blob, filename: string): void {

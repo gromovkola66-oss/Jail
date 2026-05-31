@@ -9,6 +9,8 @@ export class Viewport {
 
   private container: HTMLElement;
   private animationId: number = 0;
+  private updateCallbacks: ((delta: number) => void)[] = [];
+  private clock: THREE.Clock = new THREE.Clock();
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -59,8 +61,23 @@ export class Viewport {
 
   private animate(): void {
     this.animationId = requestAnimationFrame(this.animate.bind(this));
+    const delta = this.clock.getDelta();
     this.controls.update();
+    for (const cb of this.updateCallbacks) {
+      cb(delta);
+    }
     this.renderer.render(this.scene, this.camera);
+  }
+
+  public addUpdateCallback(fn: (delta: number) => void): void {
+    this.updateCallbacks.push(fn);
+  }
+
+  public removeUpdateCallback(fn: (delta: number) => void): void {
+    const idx = this.updateCallbacks.indexOf(fn);
+    if (idx >= 0) {
+      this.updateCallbacks.splice(idx, 1);
+    }
   }
 
   public onResize(): void {

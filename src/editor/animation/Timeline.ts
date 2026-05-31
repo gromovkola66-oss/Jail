@@ -123,6 +123,19 @@ export class Timeline {
     this.onFrameChangeListeners.forEach(cb => cb(this.currentFrame));
   }
 
+  public clearAllKeyframes(): void {
+    this.keyframes.clear();
+    this.notifyKeyframeChange();
+  }
+
+  public setKeyframeNoHistory(boneId: string, frame: number, transform: KeyframeTransform): void {
+    if (!this.keyframes.has(boneId)) {
+      this.keyframes.set(boneId, new Map());
+    }
+    this.keyframes.get(boneId)!.set(frame, { ...transform });
+    this.notifyKeyframeChange();
+  }
+
   private notifyKeyframeChange(): void {
     this.onKeyframeChangeListeners.forEach(cb => cb());
   }

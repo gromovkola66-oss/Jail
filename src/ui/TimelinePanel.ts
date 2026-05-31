@@ -12,9 +12,6 @@ export class TimelinePanel {
   private playBtn: HTMLButtonElement | null = null;
   private pauseBtn: HTMLButtonElement | null = null;
   private stopBtn: HTMLButtonElement | null = null;
-  private isPlaying: boolean = false;
-  private animationFrameId: number | null = null;
-  private lastTime: number = 0;
 
   constructor(editor: Editor, timeline: Timeline) {
     this.editor = editor;
@@ -34,15 +31,15 @@ export class TimelinePanel {
 
     const addKeyframeBtn = document.getElementById('btn-add-keyframe') as HTMLButtonElement;
 
-    // Playback controls
+    // Playback controls - connected to AnimationPlayer
     if (this.playBtn) {
-      this.playBtn.addEventListener('click', () => this.play());
+      this.playBtn.addEventListener('click', () => this.editor.playAnimation());
     }
     if (this.pauseBtn) {
-      this.pauseBtn.addEventListener('click', () => this.pause());
+      this.pauseBtn.addEventListener('click', () => this.editor.pauseAnimation());
     }
     if (this.stopBtn) {
-      this.stopBtn.addEventListener('click', () => this.stop());
+      this.stopBtn.addEventListener('click', () => this.editor.stopAnimation());
     }
 
     // Frame input
@@ -84,7 +81,7 @@ export class TimelinePanel {
       });
     }
 
-    // Timeline bar click
+    // Timeline bar click - scrubbing
     if (this.timelineBar) {
       this.timelineBar.addEventListener('click', (e) => {
         const rect = this.timelineBar!.getBoundingClientRect();
@@ -109,7 +106,22 @@ export class TimelinePanel {
       });
     }
 
-    // Listen for frame changes
+    // Preset buttons
+    const presetIdleBtn = document.getElementById('btn-preset-idle') as HTMLButtonElement;
+    const presetWalkBtn = document.getElementById('btn-preset-walk') as HTMLButtonElement;
+    const presetAttackBtn = document.getElementById('btn-preset-attack') as HTMLButtonElement;
+
+    if (presetIdleBtn) {
+      presetIdleBtn.addEventListener('click', () => this.editor.applyPreset('idle'));
+    }
+    if (presetWalkBtn) {
+      presetWalkBtn.addEventListener('click', () => this.editor.applyPreset('walk'));
+    }
+    if (presetAttackBtn) {
+      presetAttackBtn.addEventListener('click', () => this.editor.applyPreset('attack'));
+    }
+
+    // Listen for frame changes (updates frame counter during playback)
     this.timeline.onFrameChange(() => {
       this.updateFrameInput();
       this.updateTimelineBar();
@@ -120,49 +132,13 @@ export class TimelinePanel {
       this.updateTimelineBar();
     });
 
-    this.updateTimelineBar();
-  }
-
-  private play(): void {
-    if (this.isPlaying) return;
-    this.isPlaying = true;
-    this.lastTime = performance.now();
-    this.tick();
-  }
-
-  private pause(): void {
-    this.isPlaying = false;
-    if (this.animationFrameId !== null) {
-      cancelAnimationFrame(this.animationFrameId);
-      this.animationFrameId = null;
-    }
-  }
-
-  private stop(): void {
-    this.pause();
-    this.timeline.setCurrentFrame(0);
-    this.updateFrameInput();
-    this.updateTimelineBar();
-  }
-
-  private tick(): void {
-    if (!this.isPlaying) return;
-
-    const now = performance.now();
-    const elapsed = now - this.lastTime;
-    const frameTime = 1000 / this.timeline.getFPS();
-
-    if (elapsed >= frameTime) {
-      const current = this.timeline.getCurrentFrame();
-      const total = this.timeline.getTotalFrames();
-      const next = (current + 1) % total;
-      this.timeline.setCurrentFrame(next);
+    // Wire animation player frame updates to the UI
+    this.editor.animationPlayer.onFrameUpdate((frame: number) => {
       this.updateFrameInput();
       this.updateTimelineBar();
-      this.lastTime = now;
-    }
+    });
 
-    this.animationFrameId = requestAnimationFrame(() => this.tick());
+    this.updateTimelineBar();
   }
 
   private updateFrameInput(): void {

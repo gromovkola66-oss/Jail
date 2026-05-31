@@ -26,6 +26,8 @@ import { BooleanTool } from './tools/BooleanTool';
 import { PrimitiveLibrary } from './primitives/PrimitiveLibrary';
 import { BoneSystem } from './animation/BoneSystem';
 import { Timeline, KeyframeTransform } from './animation/Timeline';
+import { AnimationPlayer } from './animation/AnimationPlayer';
+import { AnimationPresets } from './animation/AnimationPresets';
 
 export type PrimitiveType = 'cube' | 'sphere' | 'cylinder' | 'plane' | 'cone';
 export type ToolMode = 'select' | 'move' | 'rotate' | 'scale' | 'extrude' | 'duplicate' | 'delete' | 'paint';
@@ -65,6 +67,8 @@ export class Editor {
   public primitiveLibrary: PrimitiveLibrary;
   public boneSystem: BoneSystem;
   public timeline: Timeline;
+  public animationPlayer: AnimationPlayer;
+  public animationPresets: AnimationPresets;
 
   private statsListeners: ((stats: SceneStats) => void)[] = [];
 
@@ -112,6 +116,13 @@ export class Editor {
     // Animation systems
     this.boneSystem = new BoneSystem(this.viewport.scene, this.history);
     this.timeline = new Timeline(this.history);
+    this.animationPlayer = new AnimationPlayer(this.timeline, this.boneSystem, this.viewport.scene);
+    this.animationPresets = new AnimationPresets(this.history);
+
+    // Wire animation player to viewport update loop
+    this.viewport.addUpdateCallback((delta) => {
+      this.animationPlayer.update(delta);
+    });
     this.weightPaintMode = new WeightPaintMode(
       this.viewport.scene,
       this.viewport.camera,
@@ -326,7 +337,7 @@ export class Editor {
   }
 
   public exportGLTF(): void {
-    this.gltfExporter.exportScene(this.viewport.scene);
+    this.gltfExporter.exportScene(this.viewport.scene, this.timeline, this.boneSystem);
   }
 
   public exportOBJ(): void {
@@ -460,6 +471,36 @@ export class Editor {
       this.selectionManager.select(result);
     }
     this.notifyStatsChange();
+  }
+
+  public playAnimation(): void {
+    this.animationPlayer.play();
+  }
+
+  public pauseAnimation(): void {
+    this.animationPlayer.pause();
+  }
+
+  public stopAnimation(): void {
+    this.animationPlayer.stop();
+  }
+
+  public applyPreset(name: 'idle' | 'walk' | 'attack'): void {
+    const selected = this.selectionManager.getSelected();
+    if (!selected) return;
+    if (!this.boneSystem.hasSkeleton(selected)) return;
+
+    switch (name) {
+      case 'idle':
+        this.animationPresets.generateIdle(this.boneSystem, selected, this.timeline);
+        break;
+      case 'walk':
+        this.animationPresets.generateWalk(this.boneSystem, selected, this.timeline);
+        break;
+      case 'attack':
+        this.animationPresets.generateAttack(this.boneSystem, selected, this.timeline);
+        break;
+    }
   }
 
   public addBoneToSelected(): void {
