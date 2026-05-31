@@ -15,9 +15,12 @@ export class FaceMode {
   private highlightMesh: THREE.Mesh | null = null;
   private paintColor: string = '#ff0000';
   private paintingEnabled: boolean = false;
+  private colorPickListeners: ((color: string) => void)[] = [];
 
   private onClickBound: (e: MouseEvent) => void;
   private onMoveBound: (e: MouseEvent) => void;
+  private onKeyDownBound: (e: KeyboardEvent) => void;
+  private onKeyUpBound: (e: KeyboardEvent) => void;
 
   constructor(scene: THREE.Scene, camera: THREE.Camera, container: HTMLElement, history: History) {
     this.scene = scene;
@@ -29,6 +32,8 @@ export class FaceMode {
 
     this.onClickBound = this.onClick.bind(this);
     this.onMoveBound = this.onMouseMove.bind(this);
+    this.onKeyDownBound = this.onKeyDown.bind(this);
+    this.onKeyUpBound = this.onKeyUp.bind(this);
   }
 
   public activate(mesh: THREE.Mesh | null): void {
@@ -52,6 +57,8 @@ export class FaceMode {
 
     this.container.addEventListener('click', this.onClickBound);
     this.container.addEventListener('mousemove', this.onMoveBound);
+    window.addEventListener('keydown', this.onKeyDownBound);
+    window.addEventListener('keyup', this.onKeyUpBound);
   }
 
   public deactivate(): void {
@@ -67,6 +74,9 @@ export class FaceMode {
     this.selectedFaceIndices = [];
     this.container.removeEventListener('click', this.onClickBound);
     this.container.removeEventListener('mousemove', this.onMoveBound);
+    window.removeEventListener('keydown', this.onKeyDownBound);
+    window.removeEventListener('keyup', this.onKeyUpBound);
+    this.container.classList.remove('eyedropper-cursor');
   }
 
   public isActive(): boolean {
@@ -83,6 +93,13 @@ export class FaceMode {
 
   public setPaintingEnabled(enabled: boolean): void {
     this.paintingEnabled = enabled;
+    if (!enabled) {
+      this.container.classList.remove('eyedropper-cursor');
+    }
+  }
+
+  public onColorPick(callback: (color: string) => void): void {
+    this.colorPickListeners.push(callback);
   }
 
   public getSelectedFaceIndex(): number {
@@ -121,6 +138,13 @@ export class FaceMode {
     if (intersects.length > 0 && intersects[0].faceIndex != null) {
       const faceIndex = intersects[0].faceIndex;
 
+      // Eyedropper: Alt+Click picks the face color
+      if (this.paintingEnabled && event.altKey) {
+        const pickedColor = this.pickFaceColor(faceIndex);
+        this.colorPickListeners.forEach(cb => cb(pickedColor));
+        return;
+      }
+
       if (event.shiftKey) {
         // Toggle face in multi-selection
         const idx = this.selectedFaceIndices.indexOf(faceIndex);
@@ -146,6 +170,38 @@ export class FaceMode {
     } else {
       this.selectedFaceIndex = -1;
       this.selectedFaceIndices = [];
+    }
+  }
+
+  private pickFaceColor(faceIndex: number): string {
+    const mesh = this.targetMesh!;
+    const geo = mesh.geometry;
+    const colorAttr = geo.attributes.color;
+
+    if (colorAttr) {
+      let i0: number;
+      if (geo.index) {
+        i0 = geo.index.getX(faceIndex * 3);
+      } else {
+        i0 = faceIndex * 3;
+      }
+      const color = new THREE.Color(colorAttr.getX(i0), colorAttr.getY(i0), colorAttr.getZ(i0));
+      return '#' + color.getHexString();
+    } else {
+      const mat = mesh.material as THREE.MeshStandardMaterial;
+      return '#' + mat.color.getHexString();
+    }
+  }
+
+  private onKeyDown(event: KeyboardEvent): void {
+    if (event.key === 'Alt' && this.paintingEnabled) {
+      this.container.classList.add('eyedropper-cursor');
+    }
+  }
+
+  private onKeyUp(event: KeyboardEvent): void {
+    if (event.key === 'Alt') {
+      this.container.classList.remove('eyedropper-cursor');
     }
   }
 

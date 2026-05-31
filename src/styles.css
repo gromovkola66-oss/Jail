@@ -363,6 +363,11 @@ body {
   color: #ffffff;
 }
 
+/* Eyedropper cursor */
+#viewport.eyedropper-cursor {
+  cursor: crosshair;
+}
+
 /* Drag-over feedback */
 #viewport.drag-over {
   outline: 3px dashed #4a90d9;

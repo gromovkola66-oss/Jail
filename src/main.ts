@@ -31,6 +31,12 @@ function init(): void {
     editor.faceMode.setPaintColor(color);
   });
 
+  // Eyedropper: pick color from face
+  editor.faceMode.onColorPick((color) => {
+    colorPalette.setColor(color);
+    editor.faceMode.setPaintColor(color);
+  });
+
   // Mode buttons
   const modeButtons = document.querySelectorAll<HTMLButtonElement>('.mode-btn');
   modeButtons.forEach(btn => {

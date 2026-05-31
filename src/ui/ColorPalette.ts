@@ -53,7 +53,7 @@ export class ColorPalette {
     }
   }
 
-  private setColor(color: string): void {
+  public setColor(color: string): void {
     this.currentColor = color;
     const colorInput = document.getElementById('object-color') as HTMLInputElement;
     if (colorInput) {
