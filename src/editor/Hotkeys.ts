@@ -57,6 +57,20 @@ export class Hotkeys {
       return;
     }
 
+    // Ctrl+R - loop cut
+    if (ctrl && key === 'r') {
+      e.preventDefault();
+      this.editor.activateLoopCut();
+      return;
+    }
+
+    // Alt+M - merge vertices
+    if (e.altKey && key === 'm') {
+      e.preventDefault();
+      this.editor.mergeVertices();
+      return;
+    }
+
     // Do not process other hotkeys if ctrl is held
     if (ctrl) return;
 

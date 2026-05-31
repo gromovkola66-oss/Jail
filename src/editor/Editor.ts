@@ -19,6 +19,10 @@ import { MirrorTool } from './tools/MirrorTool';
 import { SubdivideTool } from './tools/SubdivideTool';
 import { DecimateTool } from './tools/DecimateTool';
 import { ModelImporter } from './import/ModelImporter';
+import { LoopCutTool } from './tools/LoopCutTool';
+import { MergeVerticesTool } from './tools/MergeVerticesTool';
+import { BooleanTool } from './tools/BooleanTool';
+import { PrimitiveLibrary } from './primitives/PrimitiveLibrary';
 
 export type PrimitiveType = 'cube' | 'sphere' | 'cylinder' | 'plane' | 'cone';
 export type ToolMode = 'select' | 'move' | 'rotate' | 'scale' | 'extrude' | 'duplicate' | 'delete' | 'paint';
@@ -51,6 +55,10 @@ export class Editor {
   public subdivideTool: SubdivideTool;
   public decimateTool: DecimateTool;
   public modelImporter: ModelImporter;
+  public loopCutTool: LoopCutTool;
+  public mergeVerticesTool: MergeVerticesTool;
+  public booleanTool: BooleanTool;
+  public primitiveLibrary: PrimitiveLibrary;
 
   private statsListeners: ((stats: SceneStats) => void)[] = [];
 
@@ -106,6 +114,15 @@ export class Editor {
     this.subdivideTool = new SubdivideTool();
     this.decimateTool = new DecimateTool();
     this.modelImporter = new ModelImporter();
+    this.loopCutTool = new LoopCutTool(
+      this.viewport.scene,
+      this.viewport.camera,
+      container,
+      this.history
+    );
+    this.mergeVerticesTool = new MergeVerticesTool();
+    this.booleanTool = new BooleanTool();
+    this.primitiveLibrary = new PrimitiveLibrary(this.viewport.scene, this.history);
 
     // Pass mirror tool to vertex mode
     this.vertexMode.setMirrorTool(this.mirrorTool);
@@ -379,5 +396,49 @@ export class Editor {
   public notifyStatsChange(): void {
     const stats = this.getStats();
     this.statsListeners.forEach(cb => cb(stats));
+  }
+
+  public activateLoopCut(): void {
+    this.loopCutTool.activate();
+  }
+
+  public mergeVertices(): void {
+    const selected = this.selectionManager.getSelected();
+    if (!selected) return;
+    if (this.modeManager.getMode() !== 'vertex') return;
+    const indices = this.vertexMode.getSelectedVertexIndices();
+    if (!indices || indices.length < 2) return;
+    this.mergeVerticesTool.merge(selected, indices, this.history);
+    this.notifyStatsChange();
+  }
+
+  public booleanUnion(): void {
+    const meshes = this.selectionManager.getSelectedAll();
+    if (meshes.length !== 2) return;
+    const result = this.booleanTool.operate(meshes[0], meshes[1], 'union', this.viewport.scene, this.history);
+    if (result) {
+      this.selectionManager.select(result);
+    }
+    this.notifyStatsChange();
+  }
+
+  public booleanSubtract(): void {
+    const meshes = this.selectionManager.getSelectedAll();
+    if (meshes.length !== 2) return;
+    const result = this.booleanTool.operate(meshes[0], meshes[1], 'subtract', this.viewport.scene, this.history);
+    if (result) {
+      this.selectionManager.select(result);
+    }
+    this.notifyStatsChange();
+  }
+
+  public booleanIntersect(): void {
+    const meshes = this.selectionManager.getSelectedAll();
+    if (meshes.length !== 2) return;
+    const result = this.booleanTool.operate(meshes[0], meshes[1], 'intersect', this.viewport.scene, this.history);
+    if (result) {
+      this.selectionManager.select(result);
+    }
+    this.notifyStatsChange();
   }
 }

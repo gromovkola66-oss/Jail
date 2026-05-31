@@ -182,6 +182,93 @@ function init(): void {
     });
   }
 
+  // Loop cut button
+  const loopCutBtn = document.getElementById('btn-loopcut');
+  if (loopCutBtn) {
+    loopCutBtn.addEventListener('click', () => {
+      editor.activateLoopCut();
+    });
+  }
+
+  // Merge vertices button
+  const mergeVerticesBtn = document.getElementById('btn-merge-vertices');
+  if (mergeVerticesBtn) {
+    mergeVerticesBtn.addEventListener('click', () => {
+      editor.mergeVertices();
+    });
+  }
+
+  // Boolean operation buttons
+  const boolUnionBtn = document.getElementById('btn-bool-union');
+  if (boolUnionBtn) {
+    boolUnionBtn.addEventListener('click', () => {
+      editor.booleanUnion();
+    });
+  }
+
+  const boolSubtractBtn = document.getElementById('btn-bool-subtract');
+  if (boolSubtractBtn) {
+    boolSubtractBtn.addEventListener('click', () => {
+      editor.booleanSubtract();
+    });
+  }
+
+  const boolIntersectBtn = document.getElementById('btn-bool-intersect');
+  if (boolIntersectBtn) {
+    boolIntersectBtn.addEventListener('click', () => {
+      editor.booleanIntersect();
+    });
+  }
+
+  // Primitive Library buttons
+  const libTreeBtn = document.getElementById('btn-lib-tree');
+  if (libTreeBtn) {
+    libTreeBtn.addEventListener('click', () => {
+      editor.primitiveLibrary.addTree();
+      editor.notifyStatsChange();
+    });
+  }
+
+  const libRockBtn = document.getElementById('btn-lib-rock');
+  if (libRockBtn) {
+    libRockBtn.addEventListener('click', () => {
+      editor.primitiveLibrary.addRock();
+      editor.notifyStatsChange();
+    });
+  }
+
+  const libHouseBtn = document.getElementById('btn-lib-house');
+  if (libHouseBtn) {
+    libHouseBtn.addEventListener('click', () => {
+      editor.primitiveLibrary.addHouse();
+      editor.notifyStatsChange();
+    });
+  }
+
+  const libCharacterBtn = document.getElementById('btn-lib-character');
+  if (libCharacterBtn) {
+    libCharacterBtn.addEventListener('click', () => {
+      editor.primitiveLibrary.addCharacter();
+      editor.notifyStatsChange();
+    });
+  }
+
+  const libSwordBtn = document.getElementById('btn-lib-sword');
+  if (libSwordBtn) {
+    libSwordBtn.addEventListener('click', () => {
+      editor.primitiveLibrary.addSword();
+      editor.notifyStatsChange();
+    });
+  }
+
+  const libShieldBtn = document.getElementById('btn-lib-shield');
+  if (libShieldBtn) {
+    libShieldBtn.addEventListener('click', () => {
+      editor.primitiveLibrary.addShield();
+      editor.notifyStatsChange();
+    });
+  }
+
   // Import button
   const importBtn = document.getElementById('btn-import');
   const fileImport = document.getElementById('file-import') as HTMLInputElement | null;

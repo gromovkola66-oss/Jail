@@ -49,6 +49,11 @@
         <button id="btn-decimate" class="toolbar-btn" title="Упростить меш">Упростить</button>
       </div>
       <div class="toolbar-group">
+        <button id="btn-bool-union" class="toolbar-btn" title="Объединить два меша">Объединить</button>
+        <button id="btn-bool-subtract" class="toolbar-btn" title="Вычесть второй из первого">Вычесть</button>
+        <button id="btn-bool-intersect" class="toolbar-btn" title="Пересечение двух мешей">Пересечь</button>
+      </div>
+      <div class="toolbar-group">
         <button id="btn-import" class="toolbar-btn" title="Импорт модели">Импорт</button>
         <button id="btn-export-glb" class="toolbar-btn" title="Экспорт GLB">Экспорт GLB</button>
         <button id="btn-export-obj" class="toolbar-btn" title="Экспорт OBJ">Экспорт OBJ</button>
@@ -83,6 +88,17 @@
       <button class="tool-btn" data-tool="duplicate">Дублировать</button>
       <button class="tool-btn" data-tool="delete">Удалить</button>
       <button class="tool-btn" data-tool="paint">Покраска</button>
+      <hr class="tool-separator" />
+      <button class="tool-btn" id="btn-loopcut" data-tool="loopcut">Петлевой разрез</button>
+      <button class="tool-btn" id="btn-merge-vertices" data-tool="merge">Объединить вершины</button>
+      <hr class="tool-separator" />
+      <h3 class="panel-title">Библиотека</h3>
+      <button class="tool-btn" id="btn-lib-tree">Дерево</button>
+      <button class="tool-btn" id="btn-lib-rock">Камень</button>
+      <button class="tool-btn" id="btn-lib-house">Дом</button>
+      <button class="tool-btn" id="btn-lib-character">Персонаж</button>
+      <button class="tool-btn" id="btn-lib-sword">Меч</button>
+      <button class="tool-btn" id="btn-lib-shield">Щит</button>
     </div>
 
     <!-- Viewport -->

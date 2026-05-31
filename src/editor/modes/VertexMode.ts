@@ -72,6 +72,10 @@ export class VertexMode {
     return this.active;
   }
 
+  public getSelectedVertexIndices(): number[] {
+    return this.selectedVertexIndices;
+  }
+
   public setMirrorTool(tool: MirrorTool): void {
     this.mirrorTool = tool;
   }
