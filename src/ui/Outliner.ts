@@ -45,7 +45,7 @@ export class Outliner {
       item.className = 'outliner-item';
 
       // Check if this is the selected object
-      if (this.editor.selectionManager.getSelected() === mesh) {
+      if (this.editor.selectionManager.isSelected(mesh)) {
         item.classList.add('selected');
       }
 
@@ -87,12 +87,11 @@ export class Outliner {
   }
 
   private updateSelection(): void {
-    const selected = this.editor.selectionManager.getSelected();
     const items = this.listEl.querySelectorAll('.outliner-item');
     const meshes = this.getSceneMeshes();
 
     items.forEach((item, index) => {
-      if (index < meshes.length && meshes[index] === selected) {
+      if (index < meshes.length && this.editor.selectionManager.isSelected(meshes[index])) {
         item.classList.add('selected');
       } else {
         item.classList.remove('selected');

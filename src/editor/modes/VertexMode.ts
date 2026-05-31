@@ -11,6 +11,7 @@ export class VertexMode {
   private markers: THREE.Mesh[] = [];
   private targetMesh: THREE.Mesh | null = null;
   private selectedVertexIndex: number = -1;
+  private selectedVertexIndices: number[] = [];
   private raycaster: THREE.Raycaster;
   private mouse: THREE.Vector2;
   private isDragging: boolean = false;
@@ -58,6 +59,7 @@ export class VertexMode {
     this.clearMarkers();
     this.targetMesh = null;
     this.selectedVertexIndex = -1;
+    this.selectedVertexIndices = [];
     this.container.removeEventListener('mousedown', this.onMouseDownBound);
     this.container.removeEventListener('mousemove', this.onMouseMoveBound);
     this.container.removeEventListener('mouseup', this.onMouseUpBound);
@@ -125,15 +127,33 @@ export class VertexMode {
     const intersects = this.raycaster.intersectObjects(this.markers);
     if (intersects.length > 0) {
       const marker = intersects[0].object as THREE.Mesh;
-      this.selectedVertexIndex = marker.userData.vertexIndex;
+      const vertexIndex = marker.userData.vertexIndex as number;
 
-      // Highlight selected
-      this.markers.forEach(m => {
-        (m.material as THREE.MeshBasicMaterial).color.set(0x00ff00);
-      });
-      (marker.material as THREE.MeshBasicMaterial).color.set(0xffff00);
+      if (event.shiftKey) {
+        // Toggle vertex in selection
+        const idx = this.selectedVertexIndices.indexOf(vertexIndex);
+        if (idx >= 0) {
+          this.selectedVertexIndices.splice(idx, 1);
+          (marker.material as THREE.MeshBasicMaterial).color.set(0x00ff00);
+        } else {
+          this.selectedVertexIndices.push(vertexIndex);
+          (marker.material as THREE.MeshBasicMaterial).color.set(0xffff00);
+        }
+        this.selectedVertexIndex = this.selectedVertexIndices.length > 0
+          ? this.selectedVertexIndices[this.selectedVertexIndices.length - 1]
+          : -1;
+      } else {
+        this.selectedVertexIndex = vertexIndex;
+        this.selectedVertexIndices = [vertexIndex];
 
-      // Set up drag
+        // Highlight all markers
+        this.markers.forEach(m => {
+          (m.material as THREE.MeshBasicMaterial).color.set(0x00ff00);
+        });
+        (marker.material as THREE.MeshBasicMaterial).color.set(0xffff00);
+      }
+
+      // Set up drag for the clicked vertex
       this.isDragging = true;
       const camDir = new THREE.Vector3();
       this.camera.getWorldDirection(camDir);

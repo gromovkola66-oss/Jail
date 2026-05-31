@@ -97,6 +97,7 @@ export class Editor {
 
     // Activate object mode by default
     this.objectMode.activate();
+    this.objectMode.setSelectionManager(this.selectionManager);
 
     // Wire up mode changes
     this.modeManager.onModeChange((mode) => this.handleModeChange(mode));
@@ -227,24 +228,32 @@ export class Editor {
   }
 
   public duplicate(): void {
-    const selected = this.selectionManager.getSelected();
-    if (selected) {
-      const clone = this.duplicateTool.duplicate(selected);
-      this.selectionManager.select(clone);
-      this.notifyStatsChange();
+    const allSelected = this.selectionManager.getSelectedAll();
+    if (allSelected.length === 0) return;
+
+    const clones: THREE.Mesh[] = [];
+    for (const mesh of allSelected) {
+      const clone = this.duplicateTool.duplicate(mesh);
+      clones.push(clone);
     }
+    // Select the last clone
+    this.selectionManager.select(clones[clones.length - 1]);
+    this.notifyStatsChange();
   }
 
   public deleteSelected(): void {
-    const selected = this.selectionManager.getSelected();
-    if (!selected) return;
-
     const mode = this.modeManager.getMode();
     if (mode === 'object') {
-      this.deleteTool.deleteObject(selected);
+      const allSelected = this.selectionManager.getSelectedAll();
+      if (allSelected.length === 0) return;
+      for (const mesh of allSelected) {
+        this.deleteTool.deleteObject(mesh);
+      }
       this.selectionManager.select(null);
       this.notifyStatsChange();
     } else if (mode === 'face') {
+      const selected = this.selectionManager.getSelected();
+      if (!selected) return;
       const faceIdx = this.faceMode.getSelectedFaceIndex();
       if (faceIdx >= 0) {
         this.deleteTool.deleteFace(selected, faceIdx);

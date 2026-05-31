@@ -8,6 +8,7 @@ export class FaceMode {
   private container: HTMLElement;
   private targetMesh: THREE.Mesh | null = null;
   private selectedFaceIndex: number = -1;
+  private selectedFaceIndices: number[] = [];
   private raycaster: THREE.Raycaster;
   private mouse: THREE.Vector2;
   private active: boolean = false;
@@ -63,6 +64,7 @@ export class FaceMode {
     }
     this.targetMesh = null;
     this.selectedFaceIndex = -1;
+    this.selectedFaceIndices = [];
     this.container.removeEventListener('click', this.onClickBound);
     this.container.removeEventListener('mousemove', this.onMoveBound);
   }
@@ -85,6 +87,10 @@ export class FaceMode {
 
   public getSelectedFaceIndex(): number {
     return this.selectedFaceIndex;
+  }
+
+  public getSelectedFaceIndices(): number[] {
+    return [...this.selectedFaceIndices];
   }
 
   private getMouseCoords(event: MouseEvent): void {
@@ -113,13 +119,33 @@ export class FaceMode {
     const intersects = this.raycaster.intersectObject(this.targetMesh);
 
     if (intersects.length > 0 && intersects[0].faceIndex != null) {
-      this.selectedFaceIndex = intersects[0].faceIndex;
+      const faceIndex = intersects[0].faceIndex;
+
+      if (event.shiftKey) {
+        // Toggle face in multi-selection
+        const idx = this.selectedFaceIndices.indexOf(faceIndex);
+        if (idx >= 0) {
+          this.selectedFaceIndices.splice(idx, 1);
+        } else {
+          this.selectedFaceIndices.push(faceIndex);
+        }
+        this.selectedFaceIndex = this.selectedFaceIndices.length > 0
+          ? this.selectedFaceIndices[this.selectedFaceIndices.length - 1]
+          : -1;
+      } else {
+        this.selectedFaceIndex = faceIndex;
+        this.selectedFaceIndices = [faceIndex];
+      }
 
       if (this.paintingEnabled) {
-        this.paintFace(this.selectedFaceIndex);
+        // Paint all selected faces
+        for (const fi of this.selectedFaceIndices) {
+          this.paintFace(fi);
+        }
       }
     } else {
       this.selectedFaceIndex = -1;
+      this.selectedFaceIndices = [];
     }
   }
 

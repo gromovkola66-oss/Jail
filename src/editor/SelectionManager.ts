@@ -8,8 +8,8 @@ export class SelectionManager {
   private camera: THREE.PerspectiveCamera;
   private scene: THREE.Scene;
   private container: HTMLElement;
-  private selectedObject: THREE.Mesh | null = null;
-  private originalEmissive: THREE.Color | null = null;
+  private selectedObjects: THREE.Mesh[] = [];
+  private originalEmissives: Map<THREE.Mesh, THREE.Color> = new Map();
   private listeners: SelectionChangeCallback[] = [];
   private onMouseClickBound: (e: MouseEvent) => void;
 
@@ -28,30 +28,84 @@ export class SelectionManager {
     this.listeners.push(callback);
   }
 
+  /** Backward-compatible: returns the first selected object or null */
   public getSelected(): THREE.Mesh | null {
-    return this.selectedObject;
+    return this.selectedObjects.length > 0 ? this.selectedObjects[0] : null;
+  }
+
+  /** Returns all selected objects */
+  public getSelectedAll(): THREE.Mesh[] {
+    return [...this.selectedObjects];
+  }
+
+  public addToSelection(mesh: THREE.Mesh): void {
+    if (this.selectedObjects.includes(mesh)) return;
+    this.selectedObjects.push(mesh);
+    this.applyHighlight(mesh);
+    this.notifyListeners();
+  }
+
+  public removeFromSelection(mesh: THREE.Mesh): void {
+    const idx = this.selectedObjects.indexOf(mesh);
+    if (idx < 0) return;
+    this.removeHighlight(mesh);
+    this.selectedObjects.splice(idx, 1);
+    this.notifyListeners();
+  }
+
+  public toggleSelection(mesh: THREE.Mesh): void {
+    if (this.selectedObjects.includes(mesh)) {
+      this.removeFromSelection(mesh);
+    } else {
+      this.addToSelection(mesh);
+    }
+  }
+
+  public isSelected(mesh: THREE.Mesh): boolean {
+    return this.selectedObjects.includes(mesh);
+  }
+
+  public clearSelection(): void {
+    for (const mesh of this.selectedObjects) {
+      this.removeHighlight(mesh);
+    }
+    this.selectedObjects = [];
+    this.notifyListeners();
   }
 
   public select(object: THREE.Mesh | null): void {
-    // Deselect previous
-    if (this.selectedObject && this.originalEmissive !== null) {
-      const material = this.selectedObject.material as THREE.MeshStandardMaterial;
-      material.emissive.copy(this.originalEmissive);
+    // Clear all current highlights
+    for (const mesh of this.selectedObjects) {
+      this.removeHighlight(mesh);
     }
+    this.selectedObjects = [];
 
-    this.selectedObject = object;
-
-    // Highlight new selection
     if (object) {
-      const material = object.material as THREE.MeshStandardMaterial;
-      this.originalEmissive = material.emissive.clone();
-      material.emissive.set(0x333333);
-    } else {
-      this.originalEmissive = null;
+      this.selectedObjects.push(object);
+      this.applyHighlight(object);
     }
 
-    // Notify listeners
-    this.listeners.forEach(cb => cb(object));
+    this.notifyListeners();
+  }
+
+  private applyHighlight(mesh: THREE.Mesh): void {
+    const material = mesh.material as THREE.MeshStandardMaterial;
+    this.originalEmissives.set(mesh, material.emissive.clone());
+    material.emissive.set(0x333333);
+  }
+
+  private removeHighlight(mesh: THREE.Mesh): void {
+    const original = this.originalEmissives.get(mesh);
+    if (original) {
+      const material = mesh.material as THREE.MeshStandardMaterial;
+      material.emissive.copy(original);
+      this.originalEmissives.delete(mesh);
+    }
+  }
+
+  private notifyListeners(): void {
+    const first = this.getSelected();
+    this.listeners.forEach(cb => cb(first));
   }
 
   private onMouseClick(event: MouseEvent): void {
@@ -70,9 +124,15 @@ export class SelectionManager {
 
     if (intersects.length > 0) {
       const hit = intersects[0].object as THREE.Mesh;
-      this.select(hit);
+      if (event.shiftKey) {
+        this.toggleSelection(hit);
+      } else {
+        this.select(hit);
+      }
     } else {
-      this.select(null);
+      if (!event.shiftKey) {
+        this.select(null);
+      }
     }
   }
 

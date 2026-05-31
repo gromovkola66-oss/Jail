@@ -3,6 +3,7 @@ import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { History, Action } from '../History';
 import { GridSnap } from '../GridSnap';
+import { SelectionManager } from '../SelectionManager';
 
 export class ObjectMode {
   private transformControls: TransformControls;
@@ -10,6 +11,7 @@ export class ObjectMode {
   private history: History;
   private orbitControls: OrbitControls;
   private gridSnap: GridSnap;
+  private selectionManager: SelectionManager | null = null;
   private attached: THREE.Object3D | null = null;
   private startPosition = new THREE.Vector3();
   private startRotation = new THREE.Euler();
@@ -53,6 +55,10 @@ export class ObjectMode {
       : null;
   }
 
+  public setSelectionManager(selectionManager: SelectionManager): void {
+    this.selectionManager = selectionManager;
+  }
+
   private saveStartTransform(): void {
     if (this.attached) {
       this.startPosition.copy(this.attached.position);
@@ -77,17 +83,63 @@ export class ObjectMode {
       return;
     }
 
+    // Apply delta to other selected objects
+    const otherOldPositions: Map<THREE.Object3D, THREE.Vector3> = new Map();
+    const otherNewPositions: Map<THREE.Object3D, THREE.Vector3> = new Map();
+    const otherOldRotations: Map<THREE.Object3D, THREE.Euler> = new Map();
+    const otherNewRotations: Map<THREE.Object3D, THREE.Euler> = new Map();
+    const otherOldScales: Map<THREE.Object3D, THREE.Vector3> = new Map();
+    const otherNewScales: Map<THREE.Object3D, THREE.Vector3> = new Map();
+
+    if (this.selectionManager) {
+      const allSelected = this.selectionManager.getSelectedAll();
+      const posDelta = newPos.clone().sub(oldPos);
+      const rotDelta = new THREE.Euler(
+        newRot.x - oldRot.x,
+        newRot.y - oldRot.y,
+        newRot.z - oldRot.z
+      );
+      const scaleDelta = new THREE.Vector3(
+        oldScale.x !== 0 ? newScale.x / oldScale.x : 1,
+        oldScale.y !== 0 ? newScale.y / oldScale.y : 1,
+        oldScale.z !== 0 ? newScale.z / oldScale.z : 1
+      );
+
+      for (const mesh of allSelected) {
+        if (mesh === obj) continue;
+        otherOldPositions.set(mesh, mesh.position.clone());
+        otherOldRotations.set(mesh, mesh.rotation.clone());
+        otherOldScales.set(mesh, mesh.scale.clone());
+
+        mesh.position.add(posDelta);
+        mesh.rotation.x += rotDelta.x;
+        mesh.rotation.y += rotDelta.y;
+        mesh.rotation.z += rotDelta.z;
+        mesh.scale.multiply(scaleDelta);
+
+        otherNewPositions.set(mesh, mesh.position.clone());
+        otherNewRotations.set(mesh, mesh.rotation.clone());
+        otherNewScales.set(mesh, mesh.scale.clone());
+      }
+    }
+
     const action: Action = {
       description: 'Трансформация объекта',
       execute: () => {
         obj.position.copy(newPos);
         obj.rotation.copy(newRot);
         obj.scale.copy(newScale);
+        otherNewPositions.forEach((pos, o) => o.position.copy(pos));
+        otherNewRotations.forEach((rot, o) => o.rotation.copy(rot));
+        otherNewScales.forEach((s, o) => o.scale.copy(s));
       },
       undo: () => {
         obj.position.copy(oldPos);
         obj.rotation.copy(oldRot);
         obj.scale.copy(oldScale);
+        otherOldPositions.forEach((pos, o) => o.position.copy(pos));
+        otherOldRotations.forEach((rot, o) => o.rotation.copy(rot));
+        otherOldScales.forEach((s, o) => o.scale.copy(s));
       },
     };
 
