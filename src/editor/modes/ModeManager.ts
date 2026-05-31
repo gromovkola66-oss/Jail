@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 
-export type EditMode = 'object' | 'vertex' | 'edge' | 'face';
+export type EditMode = 'object' | 'vertex' | 'edge' | 'face' | 'weightpaint';
 export type ModeChangeCallback = (mode: EditMode) => void;
 
 export class ModeManager {

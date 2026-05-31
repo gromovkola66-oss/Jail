@@ -117,6 +117,9 @@ export class Hotkeys {
       case '4':
         this.setMode('face');
         break;
+      case '5':
+        this.setMode('weightpaint');
+        break;
     }
   }
 
@@ -144,6 +147,7 @@ export class Hotkeys {
         vertex: 'Вершины',
         edge: 'Рёбра',
         face: 'Грани',
+        weightpaint: 'Веса',
       };
       modeDisplay.textContent = `Режим: ${modeNames[mode]}`;
     }

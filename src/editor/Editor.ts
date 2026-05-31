@@ -8,6 +8,7 @@ import { ObjectMode } from './modes/ObjectMode';
 import { VertexMode } from './modes/VertexMode';
 import { EdgeMode } from './modes/EdgeMode';
 import { FaceMode } from './modes/FaceMode';
+import { WeightPaintMode } from './modes/WeightPaintMode';
 import { GridSnap } from './GridSnap';
 import { ShadingManager } from './shading/ShadingManager';
 import { GLTFExporter } from './export/GLTFExporter';
@@ -23,6 +24,8 @@ import { LoopCutTool } from './tools/LoopCutTool';
 import { MergeVerticesTool } from './tools/MergeVerticesTool';
 import { BooleanTool } from './tools/BooleanTool';
 import { PrimitiveLibrary } from './primitives/PrimitiveLibrary';
+import { BoneSystem } from './animation/BoneSystem';
+import { Timeline, KeyframeTransform } from './animation/Timeline';
 
 export type PrimitiveType = 'cube' | 'sphere' | 'cylinder' | 'plane' | 'cone';
 export type ToolMode = 'select' | 'move' | 'rotate' | 'scale' | 'extrude' | 'duplicate' | 'delete' | 'paint';
@@ -44,6 +47,7 @@ export class Editor {
   public vertexMode: VertexMode;
   public edgeMode: EdgeMode;
   public faceMode: FaceMode;
+  public weightPaintMode: WeightPaintMode;
   public gridSnap: GridSnap;
   public shadingManager: ShadingManager;
   public gltfExporter: GLTFExporter;
@@ -59,6 +63,8 @@ export class Editor {
   public mergeVerticesTool: MergeVerticesTool;
   public booleanTool: BooleanTool;
   public primitiveLibrary: PrimitiveLibrary;
+  public boneSystem: BoneSystem;
+  public timeline: Timeline;
 
   private statsListeners: ((stats: SceneStats) => void)[] = [];
 
@@ -101,6 +107,16 @@ export class Editor {
       this.viewport.camera,
       container,
       this.history
+    );
+
+    // Animation systems
+    this.boneSystem = new BoneSystem(this.viewport.scene, this.history);
+    this.timeline = new Timeline(this.history);
+    this.weightPaintMode = new WeightPaintMode(
+      this.viewport.scene,
+      this.viewport.camera,
+      container,
+      this.boneSystem
     );
 
     // Tools
@@ -155,6 +171,7 @@ export class Editor {
     this.vertexMode.deactivate();
     this.edgeMode.deactivate();
     this.faceMode.deactivate();
+    this.weightPaintMode.deactivate();
 
     const selected = this.selectionManager.getSelected();
 
@@ -172,6 +189,9 @@ export class Editor {
         break;
       case 'face':
         this.faceMode.activate(selected);
+        break;
+      case 'weightpaint':
+        this.weightPaintMode.activate(selected);
         break;
     }
   }
@@ -440,5 +460,38 @@ export class Editor {
       this.selectionManager.select(result);
     }
     this.notifyStatsChange();
+  }
+
+  public addBoneToSelected(): void {
+    const selected = this.selectionManager.getSelected();
+    if (!selected) return;
+    const parentBone = this.boneSystem.getSelectedBone();
+    const position = new THREE.Vector3(0, 1, 0);
+    this.boneSystem.addBone(selected, parentBone, position);
+  }
+
+  public removeBoneFromSelected(): void {
+    const bone = this.boneSystem.getSelectedBone();
+    if (!bone) return;
+    this.boneSystem.removeBone(bone.uuid);
+  }
+
+  public addKeyframe(): void {
+    const bone = this.boneSystem.getSelectedBone();
+    if (!bone) return;
+    const frame = this.timeline.getCurrentFrame();
+    const transform: KeyframeTransform = {
+      position: { x: bone.position.x, y: bone.position.y, z: bone.position.z },
+      rotation: { x: bone.rotation.x, y: bone.rotation.y, z: bone.rotation.z },
+      scale: { x: bone.scale.x, y: bone.scale.y, z: bone.scale.z },
+    };
+    this.timeline.addKeyframe(bone.uuid, frame, transform);
+  }
+
+  public removeKeyframe(): void {
+    const bone = this.boneSystem.getSelectedBone();
+    if (!bone) return;
+    const frame = this.timeline.getCurrentFrame();
+    this.timeline.removeKeyframe(bone.uuid, frame);
   }
 }

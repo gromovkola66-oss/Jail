@@ -14,6 +14,7 @@ import { Screenshot } from './ui/Screenshot';
 import { ProjectSerializer } from './editor/ProjectSerializer';
 import { LightManager } from './editor/LightManager';
 import { SkyboxManager } from './editor/SkyboxManager';
+import { TimelinePanel } from './ui/TimelinePanel';
 
 function init(): void {
   const viewport = document.getElementById('viewport');
@@ -41,6 +42,9 @@ function init(): void {
 
   // Project serialization
   const projectSerializer = new ProjectSerializer(editor);
+
+  // Timeline panel
+  new TimelinePanel(editor, editor.timeline);
 
   const hotkeys = new Hotkeys(editor);
 
@@ -96,6 +100,7 @@ function init(): void {
             vertex: 'Вершины',
             edge: 'Рёбра',
             face: 'Грани',
+            weightpaint: 'Веса',
           };
           modeDisplay.textContent = `Режим: ${modeNames[mode]}`;
         }
@@ -226,6 +231,21 @@ function init(): void {
     libTreeBtn.addEventListener('click', () => {
       editor.primitiveLibrary.addTree();
       editor.notifyStatsChange();
+    });
+  }
+
+  // Bone buttons
+  const addBoneBtn = document.getElementById('btn-add-bone');
+  if (addBoneBtn) {
+    addBoneBtn.addEventListener('click', () => {
+      editor.addBoneToSelected();
+    });
+  }
+
+  const removeBoneBtn = document.getElementById('btn-remove-bone');
+  if (removeBoneBtn) {
+    removeBoneBtn.addEventListener('click', () => {
+      editor.removeBoneFromSelected();
     });
   }
 

@@ -28,6 +28,7 @@
         <button class="mode-btn" data-mode="vertex">Вершины</button>
         <button class="mode-btn" data-mode="edge">Рёбра</button>
         <button class="mode-btn" data-mode="face">Грани</button>
+        <button class="mode-btn" data-mode="weightpaint">Веса</button>
       </div>
       <div class="toolbar-group">
         <button id="btn-undo" class="toolbar-btn" title="Отменить">Отменить</button>
@@ -73,6 +74,13 @@
       </div>
       <div class="toolbar-group">
         <button id="btn-screenshot" class="toolbar-btn" title="Сделать снимок">Снимок</button>
+      </div>
+      <div class="toolbar-group">
+        <button id="btn-timeline-toggle" class="toolbar-btn toggle-btn" title="Показать/скрыть таймлайн">Таймлайн</button>
+      </div>
+      <div class="toolbar-group">
+        <button id="btn-add-bone" class="toolbar-btn" title="Добавить кость">Добавить кость</button>
+        <button id="btn-remove-bone" class="toolbar-btn" title="Удалить кость">Удалить кость</button>
       </div>
     </div>
 
@@ -144,6 +152,30 @@
     </div>
 
     <!-- Bottom Status Bar -->
+    <div id="timeline-panel">
+      <div class="timeline-controls">
+        <button id="btn-timeline-play" class="toolbar-btn" title="Воспроизвести">Воспроизвести</button>
+        <button id="btn-timeline-pause" class="toolbar-btn" title="Пауза">Пауза</button>
+        <button id="btn-timeline-stop" class="toolbar-btn" title="Стоп">Стоп</button>
+        <label class="timeline-label">Кадр:
+          <input type="number" id="timeline-frame" value="0" min="0" class="timeline-input" />
+        </label>
+        <label class="timeline-label">Всего:
+          <input type="number" id="timeline-total-frames" value="120" min="1" class="timeline-input" />
+        </label>
+        <label class="timeline-label">FPS:
+          <select id="timeline-fps" class="timeline-select">
+            <option value="12">12</option>
+            <option value="24" selected>24</option>
+            <option value="30">30</option>
+            <option value="60">60</option>
+          </select>
+        </label>
+        <button id="btn-add-keyframe" class="toolbar-btn" title="Добавить ключевой кадр">Добавить кадр</button>
+      </div>
+      <div id="timeline-bar" class="timeline-bar"></div>
+    </div>
+
     <div id="status-bar">
       <span id="vertex-count">Вершины: 0</span>
       <span class="status-separator">|</span>
