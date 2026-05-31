@@ -4,6 +4,8 @@ import { ToolPanel } from './ui/ToolPanel';
 import { PropertiesPanel } from './ui/PropertiesPanel';
 import { StatusBar } from './ui/StatusBar';
 import { ColorPalette } from './ui/ColorPalette';
+import { Outliner } from './ui/Outliner';
+import { Hotkeys } from './editor/Hotkeys';
 import { EditMode } from './editor/modes/ModeManager';
 
 function init(): void {
@@ -20,6 +22,8 @@ function init(): void {
   new ToolPanel(editor);
   new PropertiesPanel(editor);
   new StatusBar(editor);
+  new Outliner(editor);
+  new Hotkeys(editor);
 
   // Color palette
   const colorPalette = new ColorPalette();

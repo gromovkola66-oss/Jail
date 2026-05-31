@@ -274,6 +274,64 @@ body {
   transform: scale(1.1);
 }
 
+/* Outliner */
+#outliner-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 12px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.outliner-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.15s;
+  user-select: none;
+}
+
+.outliner-item:hover {
+  background: #1a4a7a;
+}
+
+.outliner-item.selected {
+  background: #4a90d9;
+  color: #ffffff;
+}
+
+.outliner-item.hidden-object .outliner-item-name {
+  opacity: 0.5;
+}
+
+.outliner-item-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.outliner-eye-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  line-height: 1;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+
+.outliner-eye-btn:hover {
+  opacity: 1;
+}
+
 /* Status Bar */
 #status-bar {
   grid-area: status-bar;
