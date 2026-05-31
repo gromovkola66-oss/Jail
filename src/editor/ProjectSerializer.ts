@@ -131,5 +131,6 @@ export class ProjectSerializer {
 
     this.editor.selectionManager.select(null);
     this.editor.notifyStatsChange();
+    this.editor.history.clear();
   }
 }

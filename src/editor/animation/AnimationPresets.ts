@@ -30,23 +30,28 @@ export class AnimationPresets {
       scale: { x: 1, y: 1, z: 1 },
     };
 
-    this.setKeyframeInternal(timeline, boneId, 0, {
-      ...baseTransform,
-      position: { ...baseTransform.position, y: baseTransform.position.y + 0.05 },
-    });
-    this.setKeyframeInternal(timeline, boneId, 12, {
-      ...baseTransform,
-      position: { ...baseTransform.position, y: baseTransform.position.y - 0.05 },
-    });
-    this.setKeyframeInternal(timeline, boneId, 24, {
-      ...baseTransform,
-      position: { ...baseTransform.position, y: baseTransform.position.y + 0.05 },
-    });
+    const applyIdleKeyframes = () => {
+      this.clearKeyframesInternal(timeline);
+      this.setKeyframeInternal(timeline, boneId, 0, {
+        ...baseTransform,
+        position: { ...baseTransform.position, y: baseTransform.position.y + 0.05 },
+      });
+      this.setKeyframeInternal(timeline, boneId, 12, {
+        ...baseTransform,
+        position: { ...baseTransform.position, y: baseTransform.position.y - 0.05 },
+      });
+      this.setKeyframeInternal(timeline, boneId, 24, {
+        ...baseTransform,
+        position: { ...baseTransform.position, y: baseTransform.position.y + 0.05 },
+      });
+    };
+
+    applyIdleKeyframes();
 
     // Record history action
     const action: Action = {
       description: 'Пресет: Покой',
-      execute: () => { /* already executed */ },
+      execute: () => { applyIdleKeyframes(); },
       undo: () => {
         this.restoreKeyframes(timeline, previousKeyframes);
       },
@@ -59,80 +64,85 @@ export class AnimationPresets {
     if (!skelData) return;
 
     const previousKeyframes = this.captureKeyframes(timeline);
-    this.clearKeyframesInternal(timeline);
 
-    const rootBone = skelData.rootBone;
-    const bones = skelData.bones;
+    const applyWalkKeyframes = () => {
+      this.clearKeyframesInternal(timeline);
 
-    // Check for leg/arm bones
-    const legBones = bones.filter(b => b.name.toLowerCase().includes('leg') || b.name.toLowerCase().includes('foot'));
-    const armBones = bones.filter(b => b.name.toLowerCase().includes('arm') || b.name.toLowerCase().includes('hand'));
+      const rootBone = skelData!.rootBone;
+      const bones = skelData!.bones;
 
-    if (legBones.length > 0 || armBones.length > 0) {
-      // Animate leg bones alternating forward/back
-      for (let i = 0; i < legBones.length; i++) {
-        const bone = legBones[i];
-        const offset = i % 2 === 0 ? 0.3 : -0.3;
-        this.setKeyframeInternal(timeline, bone.uuid, 0, {
-          position: { x: bone.position.x, y: bone.position.y, z: bone.position.z },
-          rotation: { x: offset, y: 0, z: 0 },
+      // Check for leg/arm bones
+      const legBones = bones.filter(b => b.name.toLowerCase().includes('leg') || b.name.toLowerCase().includes('foot'));
+      const armBones = bones.filter(b => b.name.toLowerCase().includes('arm') || b.name.toLowerCase().includes('hand'));
+
+      if (legBones.length > 0 || armBones.length > 0) {
+        // Animate leg bones alternating forward/back
+        for (let i = 0; i < legBones.length; i++) {
+          const bone = legBones[i];
+          const offset = i % 2 === 0 ? 0.3 : -0.3;
+          this.setKeyframeInternal(timeline, bone.uuid, 0, {
+            position: { x: bone.position.x, y: bone.position.y, z: bone.position.z },
+            rotation: { x: offset, y: 0, z: 0 },
+            scale: { x: 1, y: 1, z: 1 },
+          });
+          this.setKeyframeInternal(timeline, bone.uuid, 12, {
+            position: { x: bone.position.x, y: bone.position.y, z: bone.position.z },
+            rotation: { x: -offset, y: 0, z: 0 },
+            scale: { x: 1, y: 1, z: 1 },
+          });
+          this.setKeyframeInternal(timeline, bone.uuid, 24, {
+            position: { x: bone.position.x, y: bone.position.y, z: bone.position.z },
+            rotation: { x: offset, y: 0, z: 0 },
+            scale: { x: 1, y: 1, z: 1 },
+          });
+        }
+
+        // Animate arm bones opposite to legs
+        for (let i = 0; i < armBones.length; i++) {
+          const bone = armBones[i];
+          const offset = i % 2 === 0 ? -0.2 : 0.2;
+          this.setKeyframeInternal(timeline, bone.uuid, 0, {
+            position: { x: bone.position.x, y: bone.position.y, z: bone.position.z },
+            rotation: { x: offset, y: 0, z: 0 },
+            scale: { x: 1, y: 1, z: 1 },
+          });
+          this.setKeyframeInternal(timeline, bone.uuid, 12, {
+            position: { x: bone.position.x, y: bone.position.y, z: bone.position.z },
+            rotation: { x: -offset, y: 0, z: 0 },
+            scale: { x: 1, y: 1, z: 1 },
+          });
+          this.setKeyframeInternal(timeline, bone.uuid, 24, {
+            position: { x: bone.position.x, y: bone.position.y, z: bone.position.z },
+            rotation: { x: offset, y: 0, z: 0 },
+            scale: { x: 1, y: 1, z: 1 },
+          });
+        }
+      } else {
+        // Only root bone: bob and tilt
+        const boneId = rootBone.uuid;
+        this.setKeyframeInternal(timeline, boneId, 0, {
+          position: { x: rootBone.position.x, y: rootBone.position.y + 0.05, z: rootBone.position.z },
+          rotation: { x: 0, y: 0, z: 0.05 },
           scale: { x: 1, y: 1, z: 1 },
         });
-        this.setKeyframeInternal(timeline, bone.uuid, 12, {
-          position: { x: bone.position.x, y: bone.position.y, z: bone.position.z },
-          rotation: { x: -offset, y: 0, z: 0 },
+        this.setKeyframeInternal(timeline, boneId, 12, {
+          position: { x: rootBone.position.x, y: rootBone.position.y - 0.05, z: rootBone.position.z },
+          rotation: { x: 0, y: 0, z: -0.05 },
           scale: { x: 1, y: 1, z: 1 },
         });
-        this.setKeyframeInternal(timeline, bone.uuid, 24, {
-          position: { x: bone.position.x, y: bone.position.y, z: bone.position.z },
-          rotation: { x: offset, y: 0, z: 0 },
+        this.setKeyframeInternal(timeline, boneId, 24, {
+          position: { x: rootBone.position.x, y: rootBone.position.y + 0.05, z: rootBone.position.z },
+          rotation: { x: 0, y: 0, z: 0.05 },
           scale: { x: 1, y: 1, z: 1 },
         });
       }
+    };
 
-      // Animate arm bones opposite to legs
-      for (let i = 0; i < armBones.length; i++) {
-        const bone = armBones[i];
-        const offset = i % 2 === 0 ? -0.2 : 0.2;
-        this.setKeyframeInternal(timeline, bone.uuid, 0, {
-          position: { x: bone.position.x, y: bone.position.y, z: bone.position.z },
-          rotation: { x: offset, y: 0, z: 0 },
-          scale: { x: 1, y: 1, z: 1 },
-        });
-        this.setKeyframeInternal(timeline, bone.uuid, 12, {
-          position: { x: bone.position.x, y: bone.position.y, z: bone.position.z },
-          rotation: { x: -offset, y: 0, z: 0 },
-          scale: { x: 1, y: 1, z: 1 },
-        });
-        this.setKeyframeInternal(timeline, bone.uuid, 24, {
-          position: { x: bone.position.x, y: bone.position.y, z: bone.position.z },
-          rotation: { x: offset, y: 0, z: 0 },
-          scale: { x: 1, y: 1, z: 1 },
-        });
-      }
-    } else {
-      // Only root bone: bob and tilt
-      const boneId = rootBone.uuid;
-      this.setKeyframeInternal(timeline, boneId, 0, {
-        position: { x: rootBone.position.x, y: rootBone.position.y + 0.05, z: rootBone.position.z },
-        rotation: { x: 0, y: 0, z: 0.05 },
-        scale: { x: 1, y: 1, z: 1 },
-      });
-      this.setKeyframeInternal(timeline, boneId, 12, {
-        position: { x: rootBone.position.x, y: rootBone.position.y - 0.05, z: rootBone.position.z },
-        rotation: { x: 0, y: 0, z: -0.05 },
-        scale: { x: 1, y: 1, z: 1 },
-      });
-      this.setKeyframeInternal(timeline, boneId, 24, {
-        position: { x: rootBone.position.x, y: rootBone.position.y + 0.05, z: rootBone.position.z },
-        rotation: { x: 0, y: 0, z: 0.05 },
-        scale: { x: 1, y: 1, z: 1 },
-      });
-    }
+    applyWalkKeyframes();
 
     const action: Action = {
       description: 'Пресет: Ходьба',
-      execute: () => { /* already executed */ },
+      execute: () => { applyWalkKeyframes(); },
       undo: () => {
         this.restoreKeyframes(timeline, previousKeyframes);
       },
@@ -145,55 +155,60 @@ export class AnimationPresets {
     if (!skelData) return;
 
     const previousKeyframes = this.captureKeyframes(timeline);
-    this.clearKeyframesInternal(timeline);
 
-    const rootBone = skelData.rootBone;
-    const bones = skelData.bones;
+    const applyAttackKeyframes = () => {
+      this.clearKeyframesInternal(timeline);
 
-    // Check for arm bones
-    const armBones = bones.filter(b => b.name.toLowerCase().includes('arm') || b.name.toLowerCase().includes('hand'));
+      const rootBone = skelData!.rootBone;
+      const bones = skelData!.bones;
 
-    if (armBones.length > 0) {
-      // Swing first arm bone forward
-      const armBone = armBones[0];
-      this.setKeyframeInternal(timeline, armBone.uuid, 0, {
-        position: { x: armBone.position.x, y: armBone.position.y, z: armBone.position.z },
-        rotation: { x: 0, y: 0, z: 0 },
-        scale: { x: 1, y: 1, z: 1 },
-      });
-      this.setKeyframeInternal(timeline, armBone.uuid, 6, {
-        position: { x: armBone.position.x, y: armBone.position.y, z: armBone.position.z },
-        rotation: { x: -1.2, y: 0, z: 0 },
-        scale: { x: 1, y: 1, z: 1 },
-      });
-      this.setKeyframeInternal(timeline, armBone.uuid, 12, {
-        position: { x: armBone.position.x, y: armBone.position.y, z: armBone.position.z },
-        rotation: { x: 0, y: 0, z: 0 },
-        scale: { x: 1, y: 1, z: 1 },
-      });
-    } else {
-      // Rotate root bone forward and back
-      const boneId = rootBone.uuid;
-      this.setKeyframeInternal(timeline, boneId, 0, {
-        position: { x: rootBone.position.x, y: rootBone.position.y, z: rootBone.position.z },
-        rotation: { x: 0, y: 0, z: 0 },
-        scale: { x: 1, y: 1, z: 1 },
-      });
-      this.setKeyframeInternal(timeline, boneId, 6, {
-        position: { x: rootBone.position.x, y: rootBone.position.y, z: rootBone.position.z },
-        rotation: { x: -0.5, y: 0, z: 0 },
-        scale: { x: 1, y: 1, z: 1 },
-      });
-      this.setKeyframeInternal(timeline, boneId, 12, {
-        position: { x: rootBone.position.x, y: rootBone.position.y, z: rootBone.position.z },
-        rotation: { x: 0, y: 0, z: 0 },
-        scale: { x: 1, y: 1, z: 1 },
-      });
-    }
+      // Check for arm bones
+      const armBones = bones.filter(b => b.name.toLowerCase().includes('arm') || b.name.toLowerCase().includes('hand'));
+
+      if (armBones.length > 0) {
+        // Swing first arm bone forward
+        const armBone = armBones[0];
+        this.setKeyframeInternal(timeline, armBone.uuid, 0, {
+          position: { x: armBone.position.x, y: armBone.position.y, z: armBone.position.z },
+          rotation: { x: 0, y: 0, z: 0 },
+          scale: { x: 1, y: 1, z: 1 },
+        });
+        this.setKeyframeInternal(timeline, armBone.uuid, 6, {
+          position: { x: armBone.position.x, y: armBone.position.y, z: armBone.position.z },
+          rotation: { x: -1.2, y: 0, z: 0 },
+          scale: { x: 1, y: 1, z: 1 },
+        });
+        this.setKeyframeInternal(timeline, armBone.uuid, 12, {
+          position: { x: armBone.position.x, y: armBone.position.y, z: armBone.position.z },
+          rotation: { x: 0, y: 0, z: 0 },
+          scale: { x: 1, y: 1, z: 1 },
+        });
+      } else {
+        // Rotate root bone forward and back
+        const boneId = rootBone.uuid;
+        this.setKeyframeInternal(timeline, boneId, 0, {
+          position: { x: rootBone.position.x, y: rootBone.position.y, z: rootBone.position.z },
+          rotation: { x: 0, y: 0, z: 0 },
+          scale: { x: 1, y: 1, z: 1 },
+        });
+        this.setKeyframeInternal(timeline, boneId, 6, {
+          position: { x: rootBone.position.x, y: rootBone.position.y, z: rootBone.position.z },
+          rotation: { x: -0.5, y: 0, z: 0 },
+          scale: { x: 1, y: 1, z: 1 },
+        });
+        this.setKeyframeInternal(timeline, boneId, 12, {
+          position: { x: rootBone.position.x, y: rootBone.position.y, z: rootBone.position.z },
+          rotation: { x: 0, y: 0, z: 0 },
+          scale: { x: 1, y: 1, z: 1 },
+        });
+      }
+    };
+
+    applyAttackKeyframes();
 
     const action: Action = {
       description: 'Пресет: Атака',
-      execute: () => { /* already executed */ },
+      execute: () => { applyAttackKeyframes(); },
       undo: () => {
         this.restoreKeyframes(timeline, previousKeyframes);
       },

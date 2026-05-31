@@ -100,6 +100,7 @@ export class LoopCutTool {
 
     this.performCut(this.targetMesh, this.cutEdgeIndex);
     this.removePreview();
+    this.deactivate();
   }
 
   private showPreview(mesh: THREE.Mesh, faceIndex: number): void {

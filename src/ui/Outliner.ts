@@ -6,6 +6,7 @@ export class Outliner {
   private container: HTMLElement;
   private listEl: HTMLElement;
   private dragSourceIndex: number = -1;
+  private refreshScheduled: boolean = false;
 
   constructor(editor: Editor) {
     this.editor = editor;
@@ -18,13 +19,22 @@ export class Outliner {
     this.listEl = container;
 
     // Update on scene changes (objects added/removed)
-    this.editor.onStatsChange(() => this.refresh());
+    this.editor.onStatsChange(() => this.scheduleRefresh());
 
     // Update highlight on selection change
     this.editor.selectionManager.onSelectionChange(() => this.updateSelection());
 
     // Initial render
     this.refresh();
+  }
+
+  private scheduleRefresh(): void {
+    if (this.refreshScheduled) return;
+    this.refreshScheduled = true;
+    requestAnimationFrame(() => {
+      this.refreshScheduled = false;
+      this.refresh();
+    });
   }
 
   private getSceneMeshes(): THREE.Mesh[] {

@@ -1,6 +1,10 @@
 import * as THREE from 'three';
 import { BoneSystem } from '../animation/BoneSystem';
 
+// NOTE: Weight paint data is currently visual-only and is not exported or
+// applied to the skeleton for vertex skinning. Full vertex deformation
+// requires converting meshes to SkinnedMesh with skin indices/weights,
+// which is not yet implemented.
 export class WeightPaintMode {
   private scene: THREE.Scene;
   private camera: THREE.Camera;

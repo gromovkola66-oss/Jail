@@ -54,4 +54,9 @@ export class History {
   public canRedo(): boolean {
     return this.redoStack.length > 0;
   }
+
+  public clear(): void {
+    this.undoStack = [];
+    this.redoStack = [];
+  }
 }

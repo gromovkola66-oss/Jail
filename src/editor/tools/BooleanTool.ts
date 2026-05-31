@@ -85,26 +85,21 @@ export class BooleanTool {
     const resultMesh = new THREE.Mesh(geometry, material);
     resultMesh.name = opNames[operation];
 
-    // Remove originals, add result
-    scene.remove(meshA);
-    scene.remove(meshB);
-    scene.add(resultMesh);
-
     const action: Action = {
       description: opNames[operation],
       execute: () => {
-        scene.remove(meshA);
-        scene.remove(meshB);
-        scene.add(resultMesh);
+        if (meshA.parent) scene.remove(meshA);
+        if (meshB.parent) scene.remove(meshB);
+        if (!resultMesh.parent) scene.add(resultMesh);
       },
       undo: () => {
-        scene.remove(resultMesh);
-        scene.add(meshA);
-        scene.add(meshB);
+        if (resultMesh.parent) scene.remove(resultMesh);
+        if (!meshA.parent) scene.add(meshA);
+        if (!meshB.parent) scene.add(meshB);
       },
     };
 
-    history.record(action);
+    history.push(action);
 
     return resultMesh;
   }
