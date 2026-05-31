@@ -86,6 +86,9 @@ export class DecimateTool {
     let currentTriCount = triCount;
     let edgeIdx = 0;
 
+    // Use alive flags instead of splicing to avoid O(n^2)
+    const alive: boolean[] = new Array(triangles.length).fill(true);
+
     while (currentTriCount > targetTriCount && edgeIdx < edges.length) {
       const edge = edges[edgeIdx++];
       const ci0 = getCanonical(edge.i0);
@@ -106,17 +109,26 @@ export class DecimateTool {
 
       canonical[ci1] = ci0;
 
-      // Remove degenerate triangles
-      for (let t = triangles.length - 1; t >= 0; t--) {
+      // Mark degenerate triangles as dead
+      for (let t = 0; t < triangles.length; t++) {
+        if (!alive[t]) continue;
         const tri = triangles[t];
         tri[0] = getCanonical(tri[0]);
         tri[1] = getCanonical(tri[1]);
         tri[2] = getCanonical(tri[2]);
 
         if (tri[0] === tri[1] || tri[1] === tri[2] || tri[0] === tri[2]) {
-          triangles.splice(t, 1);
+          alive[t] = false;
           currentTriCount--;
         }
+      }
+    }
+
+    // Compact: collect only alive triangles
+    const survivingTriangles: number[][] = [];
+    for (let t = 0; t < triangles.length; t++) {
+      if (alive[t]) {
+        survivingTriangles.push(triangles[t]);
       }
     }
 
@@ -128,8 +140,8 @@ export class DecimateTool {
       newColors = new Float32Array(newVertCount * itemSize);
     }
 
-    for (let t = 0; t < triangles.length; t++) {
-      const tri = triangles[t];
+    for (let t = 0; t < survivingTriangles.length; t++) {
+      const tri = survivingTriangles[t];
       for (let v = 0; v < 3; v++) {
         const ci = getCanonical(tri[v]);
         const outIdx = t * 3 + v;

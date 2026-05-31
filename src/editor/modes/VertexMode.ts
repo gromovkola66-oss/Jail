@@ -106,6 +106,8 @@ export class VertexMode {
       this.targetMesh.localToWorld(worldPos);
       marker.position.copy(worldPos);
       marker.userData.vertexIndex = i;
+      marker.userData.isEditorInternal = true;
+      marker.name = '__vertex_marker__';
       this.scene.add(marker);
       this.markers.push(marker);
     }
@@ -182,7 +184,7 @@ export class VertexMode {
   }
 
   private onMouseMove(event: MouseEvent): void {
-    if (!this.isDragging || this.selectedVertexIndex < 0 || !this.targetMesh) return;
+    if (!this.isDragging || this.selectedVertexIndices.length === 0 || !this.targetMesh) return;
     this.getMouseCoords(event);
     this.raycaster.setFromCamera(this.mouse, this.camera);
 
@@ -190,7 +192,7 @@ export class VertexMode {
     this.raycaster.ray.intersectPlane(this.dragPlane, intersection);
     if (!intersection) return;
 
-    // Move vertex in local space
+    // Compute movement delta in local space from the primary vertex's start
     const localPos = intersection.clone();
     this.targetMesh.worldToLocal(localPos);
 
@@ -200,22 +202,49 @@ export class VertexMode {
     localPos.z = this.gridSnap.snapToGrid(localPos.z);
 
     const positions = this.targetMesh.geometry.attributes.position;
-    const origX = positions.getX(this.selectedVertexIndex);
-    const origY = positions.getY(this.selectedVertexIndex);
-    const origZ = positions.getZ(this.selectedVertexIndex);
 
-    // Update all vertices that share this position
-    for (let i = 0; i < positions.count; i++) {
-      if (
-        Math.abs(positions.getX(i) - origX) < 0.0001 &&
-        Math.abs(positions.getY(i) - origY) < 0.0001 &&
-        Math.abs(positions.getZ(i) - origZ) < 0.0001
-      ) {
-        positions.setXYZ(i, localPos.x, localPos.y, localPos.z);
+    // Get current position of the primary (dragged) vertex to compute delta
+    const primaryIdx = this.selectedVertexIndex;
+    const primaryOrigX = positions.getX(primaryIdx);
+    const primaryOrigY = positions.getY(primaryIdx);
+    const primaryOrigZ = positions.getZ(primaryIdx);
+
+    // Delta is the difference between new position and current position of primary vertex
+    const dx = localPos.x - primaryOrigX;
+    const dy = localPos.y - primaryOrigY;
+    const dz = localPos.z - primaryOrigZ;
+
+    // Move all selected vertices by the delta
+    for (const vertIdx of this.selectedVertexIndices) {
+      const origX = positions.getX(vertIdx);
+      const origY = positions.getY(vertIdx);
+      const origZ = positions.getZ(vertIdx);
+
+      const newX = origX + dx;
+      const newY = origY + dy;
+      const newZ = origZ + dz;
+
+      // Update all vertices that share this position
+      for (let i = 0; i < positions.count; i++) {
+        if (
+          Math.abs(positions.getX(i) - origX) < 0.0001 &&
+          Math.abs(positions.getY(i) - origY) < 0.0001 &&
+          Math.abs(positions.getZ(i) - origZ) < 0.0001
+        ) {
+          positions.setXYZ(i, newX, newY, newZ);
+        }
+      }
+
+      // Update corresponding marker
+      const markerIdx = this.markers.findIndex(m => m.userData.vertexIndex === vertIdx);
+      if (markerIdx >= 0) {
+        const worldPos = new THREE.Vector3(newX, newY, newZ);
+        this.targetMesh.localToWorld(worldPos);
+        this.markers[markerIdx].position.copy(worldPos);
       }
     }
 
-    // Mirror: move the mirrored vertex symmetrically
+    // Mirror: move the mirrored vertex symmetrically (for primary vertex only)
     if (this.mirrorTool && this.mirrorTool.isEnabled() && this.mirrorStartLocal) {
       const mirroredTarget = this.mirrorTool.mirrorPosition(localPos);
       const ms = this.mirrorStartLocal;
@@ -233,12 +262,6 @@ export class VertexMode {
     positions.needsUpdate = true;
     this.targetMesh.geometry.computeVertexNormals();
     this.targetMesh.geometry.computeBoundingSphere();
-
-    // Update marker
-    const markerIdx = this.markers.findIndex(m => m.userData.vertexIndex === this.selectedVertexIndex);
-    if (markerIdx >= 0) {
-      this.markers[markerIdx].position.copy(intersection);
-    }
 
     event.stopPropagation();
     event.preventDefault();

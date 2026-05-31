@@ -29,7 +29,7 @@ export class Outliner {
   private getSceneMeshes(): THREE.Mesh[] {
     const meshes: THREE.Mesh[] = [];
     this.editor.viewport.scene.children.forEach((obj) => {
-      if (obj instanceof THREE.Mesh) {
+      if (obj instanceof THREE.Mesh && !obj.name.startsWith('__') && !obj.userData.isEditorInternal) {
         meshes.push(obj);
       }
     });

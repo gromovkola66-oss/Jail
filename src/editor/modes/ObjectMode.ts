@@ -94,6 +94,10 @@ export class ObjectMode {
     if (this.selectionManager) {
       const allSelected = this.selectionManager.getSelectedAll();
       const posDelta = newPos.clone().sub(oldPos);
+      // NOTE: Euler delta via component subtraction only works correctly for
+      // single-axis rotations (which is what TransformControls constrains to
+      // when using axis handles). Multi-axis simultaneous rotation would require
+      // quaternion-based delta computation.
       const rotDelta = new THREE.Euler(
         newRot.x - oldRot.x,
         newRot.y - oldRot.y,

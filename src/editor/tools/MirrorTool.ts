@@ -48,6 +48,7 @@ export class MirrorTool {
 
     this.visualPlane = new THREE.Mesh(geometry, material);
     this.visualPlane.name = '__mirror_plane__';
+    this.visualPlane.userData.isEditorInternal = true;
 
     // Orient plane based on axis
     switch (this.axis) {
@@ -138,13 +139,18 @@ export class MirrorTool {
       oldNormals.set(normals.array as Float32Array);
     }
 
+    // Save original index before modifying
+    const oldIndex = geometry.index
+      ? new Uint32Array(geometry.index.array)
+      : null;
+
     // Apply new geometry
     const newPosAttr = new THREE.BufferAttribute(newPositions, 3);
     geometry.setAttribute('position', newPosAttr);
 
-    // Remove index if present (we handle non-indexed)
-    if (geometry.index) {
-      const oldIndex = geometry.index.array;
+    // Handle index buffer: double it for mirrored geometry
+    let newIndexAttr: THREE.BufferAttribute | null = null;
+    if (oldIndex) {
       const oldIndexCount = oldIndex.length;
       const newIndex = new Uint32Array(oldIndexCount * 2);
       // Copy original indices
@@ -157,7 +163,8 @@ export class MirrorTool {
         newIndex[oldIndexCount + tri * 3 + 1] = oldIndex[tri * 3 + 2] + oldCount;
         newIndex[oldIndexCount + tri * 3 + 2] = oldIndex[tri * 3 + 1] + oldCount;
       }
-      geometry.setIndex(new THREE.BufferAttribute(newIndex, 1));
+      newIndexAttr = new THREE.BufferAttribute(newIndex, 1);
+      geometry.setIndex(newIndexAttr);
     }
 
     geometry.computeVertexNormals();
@@ -167,9 +174,10 @@ export class MirrorTool {
       description: 'Применить зеркало',
       execute: () => {
         geometry.setAttribute('position', newPosAttr);
-        if (geometry.index) {
-          // already set above, but for redo
-          geometry.setAttribute('position', newPosAttr);
+        if (newIndexAttr) {
+          geometry.setIndex(newIndexAttr);
+        } else {
+          geometry.setIndex(null);
         }
         geometry.computeVertexNormals();
         geometry.computeBoundingSphere();
@@ -180,8 +188,12 @@ export class MirrorTool {
         if (oldNormals) {
           geometry.setAttribute('normal', new THREE.BufferAttribute(oldNormals, 3));
         }
-        // Restore original index if there was one
-        geometry.setIndex(null);
+        // Restore original index (or null if there was none)
+        if (oldIndex) {
+          geometry.setIndex(new THREE.BufferAttribute(oldIndex, 1));
+        } else {
+          geometry.setIndex(null);
+        }
         geometry.computeVertexNormals();
         geometry.computeBoundingSphere();
       },

@@ -150,7 +150,7 @@ function init(): void {
     fileImport.addEventListener('change', () => {
       const file = fileImport.files?.[0];
       if (file) {
-        editor.importModel(file);
+        editor.importModel(file).catch(err => console.error('Import failed:', err));
         fileImport.value = '';
       }
     });
@@ -174,7 +174,7 @@ function init(): void {
         const file = files[i];
         const ext = file.name.split('.').pop()?.toLowerCase() || '';
         if (supportedExtensions.includes(ext)) {
-          editor.importModel(file);
+          editor.importModel(file).catch(err => console.error('Import failed:', err));
         }
       }
     }

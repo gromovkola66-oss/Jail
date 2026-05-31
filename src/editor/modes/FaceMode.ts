@@ -53,6 +53,8 @@ export class FaceMode {
     });
     this.highlightMesh = new THREE.Mesh(triGeo, mat);
     this.highlightMesh.visible = false;
+    this.highlightMesh.name = '__face_highlight__';
+    this.highlightMesh.userData.isEditorInternal = true;
     this.scene.add(this.highlightMesh);
 
     this.container.addEventListener('click', this.onClickBound);
