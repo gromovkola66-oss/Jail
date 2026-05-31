@@ -18,6 +18,7 @@ import { DuplicateTool } from './tools/DuplicateTool';
 import { MirrorTool } from './tools/MirrorTool';
 import { SubdivideTool } from './tools/SubdivideTool';
 import { DecimateTool } from './tools/DecimateTool';
+import { ModelImporter } from './import/ModelImporter';
 
 export type PrimitiveType = 'cube' | 'sphere' | 'cylinder' | 'plane' | 'cone';
 export type ToolMode = 'select' | 'move' | 'rotate' | 'scale' | 'extrude' | 'duplicate' | 'delete' | 'paint';
@@ -49,6 +50,7 @@ export class Editor {
   public mirrorTool: MirrorTool;
   public subdivideTool: SubdivideTool;
   public decimateTool: DecimateTool;
+  public modelImporter: ModelImporter;
 
   private statsListeners: ((stats: SceneStats) => void)[] = [];
 
@@ -103,6 +105,7 @@ export class Editor {
     this.mirrorTool = new MirrorTool();
     this.subdivideTool = new SubdivideTool();
     this.decimateTool = new DecimateTool();
+    this.modelImporter = new ModelImporter();
 
     // Pass mirror tool to vertex mode
     this.vertexMode.setMirrorTool(this.mirrorTool);
@@ -320,6 +323,33 @@ export class Editor {
     if (!selected) return;
     this.decimateTool.decimate(selected, this.history);
     this.notifyStatsChange();
+  }
+
+  public async importModel(file: File): Promise<void> {
+    const meshes = await this.modelImporter.importFromFile(file);
+    if (meshes.length === 0) return;
+
+    const scene = this.viewport.scene;
+
+    const action: Action = {
+      description: `Импорт ${file.name}`,
+      execute: () => {
+        for (const mesh of meshes) {
+          scene.add(mesh);
+        }
+        this.selectionManager.select(meshes[0]);
+        this.notifyStatsChange();
+      },
+      undo: () => {
+        for (const mesh of meshes) {
+          scene.remove(mesh);
+        }
+        this.selectionManager.select(null);
+        this.notifyStatsChange();
+      },
+    };
+
+    this.history.push(action);
   }
 
   public getStats(): SceneStats {

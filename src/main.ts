@@ -133,6 +133,46 @@ function init(): void {
       editor.decimateSelected();
     });
   }
+
+  // Import button
+  const importBtn = document.getElementById('btn-import');
+  const fileImport = document.getElementById('file-import') as HTMLInputElement | null;
+  if (importBtn && fileImport) {
+    importBtn.addEventListener('click', () => {
+      fileImport.click();
+    });
+    fileImport.addEventListener('change', () => {
+      const file = fileImport.files?.[0];
+      if (file) {
+        editor.importModel(file);
+        fileImport.value = '';
+      }
+    });
+  }
+
+  // Drag and drop on viewport
+  const supportedExtensions = ['obj', 'glb', 'gltf'];
+  viewport.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    viewport.classList.add('drag-over');
+  });
+  viewport.addEventListener('dragleave', () => {
+    viewport.classList.remove('drag-over');
+  });
+  viewport.addEventListener('drop', (e) => {
+    e.preventDefault();
+    viewport.classList.remove('drag-over');
+    const files = e.dataTransfer?.files;
+    if (files) {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const ext = file.name.split('.').pop()?.toLowerCase() || '';
+        if (supportedExtensions.includes(ext)) {
+          editor.importModel(file);
+        }
+      }
+    }
+  });
 }
 
 document.addEventListener('DOMContentLoaded', init);

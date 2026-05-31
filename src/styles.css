@@ -362,3 +362,9 @@ body {
   border-color: #6ab0f9;
   color: #ffffff;
 }
+
+/* Drag-over feedback */
+#viewport.drag-over {
+  outline: 3px dashed #4a90d9;
+  outline-offset: -3px;
+}
