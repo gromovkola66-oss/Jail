@@ -1,10 +1,12 @@
 import * as THREE from 'three';
 import { History, Action } from '../History';
+import { GridSnap } from '../GridSnap';
 
 export class VertexMode {
   private scene: THREE.Scene;
   private camera: THREE.Camera;
   private history: History;
+  private gridSnap: GridSnap;
   private container: HTMLElement;
   private markers: THREE.Mesh[] = [];
   private targetMesh: THREE.Mesh | null = null;
@@ -21,10 +23,11 @@ export class VertexMode {
   private onMouseMoveBound: (e: MouseEvent) => void;
   private onMouseUpBound: (e: MouseEvent) => void;
 
-  constructor(scene: THREE.Scene, camera: THREE.Camera, container: HTMLElement, history: History) {
+  constructor(scene: THREE.Scene, camera: THREE.Camera, container: HTMLElement, history: History, gridSnap: GridSnap) {
     this.scene = scene;
     this.camera = camera;
     this.history = history;
+    this.gridSnap = gridSnap;
     this.container = container;
     this.raycaster = new THREE.Raycaster();
     this.raycaster.params.Points = { threshold: 0.2 };
@@ -155,6 +158,11 @@ export class VertexMode {
     const localPos = intersection.clone();
     this.targetMesh.worldToLocal(localPos);
 
+    // Apply grid snap
+    localPos.x = this.gridSnap.snapToGrid(localPos.x);
+    localPos.y = this.gridSnap.snapToGrid(localPos.y);
+    localPos.z = this.gridSnap.snapToGrid(localPos.z);
+
     const positions = this.targetMesh.geometry.attributes.position;
     const origX = positions.getX(this.selectedVertexIndex);
     const origY = positions.getY(this.selectedVertexIndex);
@@ -242,8 +250,7 @@ export class VertexMode {
         },
       };
 
-      this.history['undoStack'].push(action);
-      this.history['redoStack'] = [];
+      this.history.record(action);
     }
 
     event.stopPropagation();

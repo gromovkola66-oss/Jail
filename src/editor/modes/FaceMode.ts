@@ -33,13 +33,34 @@ export class FaceMode {
   public activate(mesh: THREE.Mesh | null): void {
     this.active = true;
     this.targetMesh = mesh;
+
+    // Create persistent highlight mesh
+    const triGeo = new THREE.BufferGeometry();
+    const verts = new Float32Array(9);
+    triGeo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+    const mat = new THREE.MeshBasicMaterial({
+      color: 0xffaa00,
+      transparent: true,
+      opacity: 0.4,
+      side: THREE.DoubleSide,
+      depthTest: false,
+    });
+    this.highlightMesh = new THREE.Mesh(triGeo, mat);
+    this.highlightMesh.visible = false;
+    this.scene.add(this.highlightMesh);
+
     this.container.addEventListener('click', this.onClickBound);
     this.container.addEventListener('mousemove', this.onMoveBound);
   }
 
   public deactivate(): void {
     this.active = false;
-    this.clearHighlight();
+    if (this.highlightMesh) {
+      this.scene.remove(this.highlightMesh);
+      this.highlightMesh.geometry.dispose();
+      (this.highlightMesh.material as THREE.Material).dispose();
+      this.highlightMesh = null;
+    }
     this.targetMesh = null;
     this.selectedFaceIndex = -1;
     this.container.removeEventListener('click', this.onClickBound);
@@ -73,15 +94,15 @@ export class FaceMode {
   }
 
   private onMouseMove(event: MouseEvent): void {
-    if (!this.targetMesh) return;
+    if (!this.targetMesh || !this.highlightMesh) return;
     this.getMouseCoords(event);
     this.raycaster.setFromCamera(this.mouse, this.camera);
     const intersects = this.raycaster.intersectObject(this.targetMesh);
 
-    this.clearHighlight();
-
     if (intersects.length > 0 && intersects[0].faceIndex != null) {
       this.showFaceHighlight(intersects[0].faceIndex);
+    } else {
+      this.highlightMesh.visible = false;
     }
   }
 
@@ -103,7 +124,7 @@ export class FaceMode {
   }
 
   private showFaceHighlight(faceIndex: number): void {
-    if (!this.targetMesh) return;
+    if (!this.targetMesh || !this.highlightMesh) return;
     const geo = this.targetMesh.geometry;
     const positions = geo.attributes.position;
 
@@ -118,35 +139,18 @@ export class FaceMode {
       i2 = faceIndex * 3 + 2;
     }
 
-    const triGeo = new THREE.BufferGeometry();
-    const verts = new Float32Array(9);
-    verts[0] = positions.getX(i0); verts[1] = positions.getY(i0); verts[2] = positions.getZ(i0);
-    verts[3] = positions.getX(i1); verts[4] = positions.getY(i1); verts[5] = positions.getZ(i1);
-    verts[6] = positions.getX(i2); verts[7] = positions.getY(i2); verts[8] = positions.getZ(i2);
-    triGeo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+    // Update existing geometry buffer in-place
+    const posAttr = this.highlightMesh.geometry.attributes.position as THREE.BufferAttribute;
+    const arr = posAttr.array as Float32Array;
+    arr[0] = positions.getX(i0); arr[1] = positions.getY(i0); arr[2] = positions.getZ(i0);
+    arr[3] = positions.getX(i1); arr[4] = positions.getY(i1); arr[5] = positions.getZ(i1);
+    arr[6] = positions.getX(i2); arr[7] = positions.getY(i2); arr[8] = positions.getZ(i2);
+    posAttr.needsUpdate = true;
 
-    const mat = new THREE.MeshBasicMaterial({
-      color: 0xffaa00,
-      transparent: true,
-      opacity: 0.4,
-      side: THREE.DoubleSide,
-      depthTest: false,
-    });
-
-    this.highlightMesh = new THREE.Mesh(triGeo, mat);
     this.highlightMesh.position.copy(this.targetMesh.position);
     this.highlightMesh.rotation.copy(this.targetMesh.rotation);
     this.highlightMesh.scale.copy(this.targetMesh.scale);
-    this.scene.add(this.highlightMesh);
-  }
-
-  private clearHighlight(): void {
-    if (this.highlightMesh) {
-      this.scene.remove(this.highlightMesh);
-      this.highlightMesh.geometry.dispose();
-      (this.highlightMesh.material as THREE.Material).dispose();
-      this.highlightMesh = null;
-    }
+    this.highlightMesh.visible = true;
   }
 
   private paintFace(faceIndex: number): void {
@@ -216,7 +220,6 @@ export class FaceMode {
       },
     };
 
-    this.history['undoStack'].push(action);
-    this.history['redoStack'] = [];
+    this.history.record(action);
   }
 }

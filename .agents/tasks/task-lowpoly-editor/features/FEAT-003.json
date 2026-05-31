@@ -1,0 +1,31 @@
+{
+  "id": "FEAT-003",
+  "type": "fix",
+  "description": "Address code review findings: fix History bypass, wire grid snap, fix face highlight allocation churn, preserve vertex colors in extrude, fix SelectionManager dispose, remove dead code, and add live properties panel updates.",
+  "status": "in_progress",
+  "steps": [
+    "Add record(action) method to History class that stores without executing",
+    "Update 5 call sites to use history.record() instead of direct stack access",
+    "Wire GridSnap into ObjectMode and VertexMode constructors and manipulation logic",
+    "Fix FaceMode highlight mesh to use persistent geometry with in-place updates",
+    "Fix ExtrudeTool to preserve vertex color attribute when rebuilding geometry",
+    "Fix SelectionManager dispose by storing bound reference",
+    "Delete dead code: FacePainter.ts and TransformTool.ts",
+    "Add live transform updates to PropertiesPanel during drag"
+  ],
+  "acceptance_criteria": [
+    "npm run build completes without errors",
+    "No direct access to history private stacks from outside History class",
+    "GridSnap.snapToGrid is called during vertex and object manipulation",
+    "Face highlight uses persistent mesh updated in-place",
+    "Extrude preserves vertex colors from source geometry",
+    "SelectionManager properly removes event listener on dispose",
+    "FacePainter.ts and TransformTool.ts are deleted",
+    "Properties panel updates during transform drags"
+  ],
+  "verification": [
+    "Run 'cd /projects/sandbox/Jail && npm run build' and confirm it exits with code 0"
+  ],
+  "blocked_reason": null,
+  "findings": null
+}

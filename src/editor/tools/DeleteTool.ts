@@ -65,7 +65,6 @@ export class DeleteTool {
       },
     };
 
-    this.history['undoStack'].push(action);
-    this.history['redoStack'] = [];
+    this.history.record(action);
   }
 }

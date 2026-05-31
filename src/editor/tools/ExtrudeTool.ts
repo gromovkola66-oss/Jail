@@ -45,6 +45,17 @@ export class ExtrudeTool {
       newPositions[i] = oldPositions[i];
     }
 
+    // Preserve vertex colors if they exist
+    const hasColors = !!workGeo.attributes.color;
+    let newColors: Float32Array | null = null;
+    if (hasColors) {
+      const oldColors = workGeo.attributes.color.array;
+      newColors = new Float32Array(newVertCount * 3);
+      for (let i = 0; i < oldColors.length; i++) {
+        newColors[i] = oldColors[i];
+      }
+    }
+
     // Move original face to extruded position
     newPositions[baseIdx * 3] = nv0.x;
     newPositions[baseIdx * 3 + 1] = nv0.y;
@@ -64,6 +75,16 @@ export class ExtrudeTool {
       [v2, v0, nv0, nv2],
     ];
 
+    // Default color for side face vertices (use average of extruded face or grey)
+    let sideR = 0.7, sideG = 0.7, sideB = 0.7;
+    if (hasColors && newColors) {
+      const colorAttr = workGeo.attributes.color;
+      sideR = (colorAttr.getX(baseIdx) + colorAttr.getX(baseIdx + 1) + colorAttr.getX(baseIdx + 2)) / 3;
+      sideG = (colorAttr.getY(baseIdx) + colorAttr.getY(baseIdx + 1) + colorAttr.getY(baseIdx + 2)) / 3;
+      sideB = (colorAttr.getZ(baseIdx) + colorAttr.getZ(baseIdx + 1) + colorAttr.getZ(baseIdx + 2)) / 3;
+    }
+
+    let colorOffset = positions.count * 3;
     for (const [a, b, c, d] of sides) {
       // Triangle 1: a, b, c
       newPositions[offset2++] = a.x; newPositions[offset2++] = a.y; newPositions[offset2++] = a.z;
@@ -73,10 +94,22 @@ export class ExtrudeTool {
       newPositions[offset2++] = a.x; newPositions[offset2++] = a.y; newPositions[offset2++] = a.z;
       newPositions[offset2++] = c.x; newPositions[offset2++] = c.y; newPositions[offset2++] = c.z;
       newPositions[offset2++] = d.x; newPositions[offset2++] = d.y; newPositions[offset2++] = d.z;
+
+      // Set side face vertex colors
+      if (newColors) {
+        for (let vi = 0; vi < 6; vi++) {
+          newColors[colorOffset++] = sideR;
+          newColors[colorOffset++] = sideG;
+          newColors[colorOffset++] = sideB;
+        }
+      }
     }
 
     const newGeo = new THREE.BufferGeometry();
     newGeo.setAttribute('position', new THREE.BufferAttribute(newPositions, 3));
+    if (newColors) {
+      newGeo.setAttribute('color', new THREE.Float32BufferAttribute(newColors, 3));
+    }
     newGeo.computeVertexNormals();
 
     const oldGeometry = mesh.geometry;
@@ -92,7 +125,6 @@ export class ExtrudeTool {
       },
     };
 
-    this.history['undoStack'].push(action);
-    this.history['redoStack'] = [];
+    this.history.record(action);
   }
 }

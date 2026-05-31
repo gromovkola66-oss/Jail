@@ -13,6 +13,7 @@ export class PropertiesPanel {
   private scaleY!: HTMLInputElement;
   private scaleZ!: HTMLInputElement;
   private colorInput!: HTMLInputElement;
+  private rafId: number | null = null;
 
   constructor(editor: Editor) {
     this.editor = editor;
@@ -23,7 +24,33 @@ export class PropertiesPanel {
     // Listen for selection changes
     this.editor.selectionManager.onSelectionChange((obj) => {
       this.updateDisplay(obj);
+      if (obj) {
+        this.startLiveUpdate();
+      } else {
+        this.stopLiveUpdate();
+      }
     });
+  }
+
+  private startLiveUpdate(): void {
+    if (this.rafId !== null) return;
+    const loop = () => {
+      const selected = this.editor.selectionManager.getSelected();
+      if (selected) {
+        this.updateDisplay(selected);
+        this.rafId = requestAnimationFrame(loop);
+      } else {
+        this.rafId = null;
+      }
+    };
+    this.rafId = requestAnimationFrame(loop);
+  }
+
+  private stopLiveUpdate(): void {
+    if (this.rafId !== null) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+    }
   }
 
   private cacheElements(): void {

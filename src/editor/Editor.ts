@@ -58,18 +58,21 @@ export class Editor {
 
     // Mode management
     this.modeManager = new ModeManager();
+    this.gridSnap = new GridSnap();
     this.objectMode = new ObjectMode(
       this.viewport.camera,
       this.viewport.renderer,
       this.viewport.scene,
       this.viewport.controls,
-      this.history
+      this.history,
+      this.gridSnap
     );
     this.vertexMode = new VertexMode(
       this.viewport.scene,
       this.viewport.camera,
       container,
-      this.history
+      this.history,
+      this.gridSnap
     );
     this.edgeMode = new EdgeMode(
       this.viewport.scene,
@@ -85,7 +88,6 @@ export class Editor {
     );
 
     // Tools
-    this.gridSnap = new GridSnap();
     this.shadingManager = new ShadingManager(this.viewport.scene);
     this.gltfExporter = new GLTFExporter();
     this.objExporter = new OBJExporter();

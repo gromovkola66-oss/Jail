@@ -11,6 +11,7 @@ export class SelectionManager {
   private selectedObject: THREE.Mesh | null = null;
   private originalEmissive: THREE.Color | null = null;
   private listeners: SelectionChangeCallback[] = [];
+  private onMouseClickBound: (e: MouseEvent) => void;
 
   constructor(camera: THREE.PerspectiveCamera, scene: THREE.Scene, container: HTMLElement) {
     this.raycaster = new THREE.Raycaster();
@@ -19,7 +20,8 @@ export class SelectionManager {
     this.scene = scene;
     this.container = container;
 
-    container.addEventListener('click', this.onMouseClick.bind(this));
+    this.onMouseClickBound = this.onMouseClick.bind(this);
+    container.addEventListener('click', this.onMouseClickBound);
   }
 
   public onSelectionChange(callback: SelectionChangeCallback): void {
@@ -75,6 +77,6 @@ export class SelectionManager {
   }
 
   public dispose(): void {
-    this.container.removeEventListener('click', this.onMouseClick.bind(this));
+    this.container.removeEventListener('click', this.onMouseClickBound);
   }
 }

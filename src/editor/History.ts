@@ -20,6 +20,17 @@ export class History {
     }
   }
 
+  /** Record an already-executed action without re-executing it. */
+  public record(action: Action): void {
+    this.undoStack.push(action);
+    this.redoStack = [];
+
+    // Enforce max size
+    if (this.undoStack.length > this.maxSize) {
+      this.undoStack.shift();
+    }
+  }
+
   public undo(): void {
     const action = this.undoStack.pop();
     if (action) {

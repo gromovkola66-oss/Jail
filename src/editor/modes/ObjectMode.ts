@@ -2,12 +2,14 @@ import * as THREE from 'three';
 import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { History, Action } from '../History';
+import { GridSnap } from '../GridSnap';
 
 export class ObjectMode {
   private transformControls: TransformControls;
   private scene: THREE.Scene;
   private history: History;
   private orbitControls: OrbitControls;
+  private gridSnap: GridSnap;
   private attached: THREE.Object3D | null = null;
   private startPosition = new THREE.Vector3();
   private startRotation = new THREE.Euler();
@@ -19,11 +21,13 @@ export class ObjectMode {
     renderer: THREE.WebGLRenderer,
     scene: THREE.Scene,
     orbitControls: OrbitControls,
-    history: History
+    history: History,
+    gridSnap: GridSnap
   ) {
     this.scene = scene;
     this.history = history;
     this.orbitControls = orbitControls;
+    this.gridSnap = gridSnap;
 
     this.transformControls = new TransformControls(camera, renderer.domElement);
     this.transformControls.addEventListener('dragging-changed', (event) => {
@@ -37,6 +41,16 @@ export class ObjectMode {
     });
 
     this.scene.add(this.transformControls.getHelper());
+
+    // Wire grid snap to TransformControls
+    this.updateTranslationSnap();
+    this.gridSnap.onChange(() => this.updateTranslationSnap());
+  }
+
+  private updateTranslationSnap(): void {
+    this.transformControls.translationSnap = this.gridSnap.isEnabled()
+      ? this.gridSnap.getGridSize()
+      : null;
   }
 
   private saveStartTransform(): void {
@@ -77,9 +91,7 @@ export class ObjectMode {
       },
     };
 
-    // Push without re-executing
-    this.history['undoStack'].push(action);
-    this.history['redoStack'] = [];
+    this.history.record(action);
   }
 
   public setTransformMode(mode: 'translate' | 'rotate' | 'scale'): void {
