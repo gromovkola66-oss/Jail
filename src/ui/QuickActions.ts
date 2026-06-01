@@ -64,6 +64,11 @@ export class QuickActions {
       return;
     }
 
+    // Never show when free camera is active (right-click is used for look)
+    if (this.editor.viewport.getCameraMode() === 'free') {
+      return;
+    }
+
     // Never show if disabled
     if (!this.enabled) {
       return;
@@ -96,6 +101,31 @@ export class QuickActions {
     this.panel.style.transform = 'none';
 
     this.show();
+
+    // Clamp panel to viewport bounds so it never renders off-screen
+    const margin = 8;
+    const rect = this.panel.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    let left = e.clientX;
+    let top = e.clientY;
+
+    if (left + rect.width + margin > vw) {
+      left = vw - rect.width - margin;
+    }
+    if (top + rect.height + margin > vh) {
+      top = vh - rect.height - margin;
+    }
+    if (left < margin) {
+      left = margin;
+    }
+    if (top < margin) {
+      top = margin;
+    }
+
+    this.panel.style.left = `${left}px`;
+    this.panel.style.top = `${top}px`;
   }
 
   private getButtonsForContext(selected: THREE.Mesh | null, mode: EditMode): QuickActionButton[] {
