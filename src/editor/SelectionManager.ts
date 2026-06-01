@@ -12,6 +12,10 @@ export class SelectionManager {
   private originalEmissives: Map<THREE.Mesh, THREE.Color> = new Map();
   private listeners: SelectionChangeCallback[] = [];
   private onMouseClickBound: (e: MouseEvent) => void;
+  private cycleIntersections: THREE.Mesh[] = [];
+  private cycleIndex: number = 0;
+  private lastCycleMouseX: number = 0;
+  private lastCycleMouseY: number = 0;
 
   constructor(camera: THREE.PerspectiveCamera, scene: THREE.Scene, container: HTMLElement) {
     this.raycaster = new THREE.Raycaster();
@@ -121,6 +125,28 @@ export class SelectionManager {
     );
 
     const intersects = this.raycaster.intersectObjects(meshes, false);
+
+    // Alt+Click: cycle through overlapping objects
+    if (event.altKey && intersects.length > 1) {
+      const mouseMoved = Math.abs(event.clientX - this.lastCycleMouseX) > 5 ||
+                         Math.abs(event.clientY - this.lastCycleMouseY) > 5;
+
+      if (mouseMoved || this.cycleIntersections.length === 0) {
+        this.cycleIntersections = intersects.map(i => i.object as THREE.Mesh);
+        this.cycleIndex = 0;
+        this.lastCycleMouseX = event.clientX;
+        this.lastCycleMouseY = event.clientY;
+      } else {
+        this.cycleIndex = (this.cycleIndex + 1) % this.cycleIntersections.length;
+      }
+
+      this.select(this.cycleIntersections[this.cycleIndex]);
+      return;
+    }
+
+    // Reset cycle state on non-alt click
+    this.cycleIntersections = [];
+    this.cycleIndex = 0;
 
     if (intersects.length > 0) {
       const hit = intersects[0].object as THREE.Mesh;

@@ -276,6 +276,50 @@ body {
   transform: scale(1.1);
 }
 
+/* Recent colors */
+.recent-colors-section {
+  margin-bottom: 8px;
+}
+
+.recent-colors-label {
+  font-size: 11px;
+  color: #7a7a9a;
+  margin-bottom: 4px;
+}
+
+.recent-colors-swatches {
+  display: flex;
+  gap: 4px;
+}
+
+.recent-color-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 3px;
+  border: 2px solid #4a90d9;
+  cursor: pointer;
+  transition: transform 0.1s, border-color 0.2s;
+}
+
+.recent-color-swatch:hover {
+  transform: scale(1.15);
+  border-color: #ffffff;
+}
+
+/* Extrude distance label */
+.extrude-distance-label {
+  position: fixed;
+  background: rgba(0, 0, 0, 0.85);
+  color: #4a90d9;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: monospace;
+  pointer-events: none;
+  z-index: 60000;
+  border: 1px solid #4a90d9;
+}
+
 /* Outliner */
 #outliner-list {
   display: flex;

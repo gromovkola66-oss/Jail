@@ -349,9 +349,13 @@ export class Editor {
     const selected = this.selectionManager.getSelected();
     if (!selected) return;
     if (this.modeManager.getMode() !== 'face') return;
+    if (this.extrudeTool.isInteractive) return;
     const faceIdx = this.faceMode.getSelectedFaceIndex();
     if (faceIdx >= 0) {
-      this.extrudeTool.extrude(selected, faceIdx);
+      this.extrudeTool.startInteractiveExtrude(
+        selected, faceIdx, this.viewport.camera,
+        this.viewport.renderer.domElement.parentElement || this.viewport.renderer.domElement
+      );
       this.notifyStatsChange();
     }
   }

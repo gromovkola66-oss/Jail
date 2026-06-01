@@ -3,6 +3,8 @@ export type ColorChangeCallback = (color: string) => void;
 export class ColorPalette {
   private currentColor: string = '#ff0000';
   private listeners: ColorChangeCallback[] = [];
+  private recentColors: string[] = [];
+  private recentContainer: HTMLElement | null = null;
 
   private readonly presetColors: string[] = [
     '#ff0000', '#ff6600', '#ffcc00', '#33cc33',
@@ -12,6 +14,7 @@ export class ColorPalette {
   ];
 
   constructor() {
+    this.recentColors = JSON.parse(localStorage.getItem('xbron_recent_colors') || '[]');
     this.setupSwatches();
     this.setupColorPicker();
   }
@@ -28,6 +31,20 @@ export class ColorPalette {
     const palette = document.getElementById('color-palette');
     if (!palette) return;
 
+    // Recent colors section
+    const recentSection = document.createElement('div');
+    recentSection.className = 'recent-colors-section';
+    const recentLabel = document.createElement('div');
+    recentLabel.className = 'recent-colors-label';
+    recentLabel.textContent = '\u041D\u0435\u0434\u0430\u0432\u043D\u0438\u0435:';
+    recentSection.appendChild(recentLabel);
+    this.recentContainer = document.createElement('div');
+    this.recentContainer.className = 'recent-colors-swatches';
+    recentSection.appendChild(this.recentContainer);
+    palette.appendChild(recentSection);
+    this.updateRecentSwatches();
+
+    // Main swatches
     const swatchContainer = document.createElement('div');
     swatchContainer.className = 'color-swatches';
 
@@ -42,6 +59,20 @@ export class ColorPalette {
     });
 
     palette.appendChild(swatchContainer);
+  }
+
+  private updateRecentSwatches(): void {
+    if (!this.recentContainer) return;
+    this.recentContainer.innerHTML = '';
+    this.recentColors.forEach(color => {
+      const swatch = document.createElement('div');
+      swatch.className = 'color-swatch recent-color-swatch';
+      swatch.style.backgroundColor = color;
+      swatch.addEventListener('click', () => {
+        this.setColor(color);
+      });
+      this.recentContainer!.appendChild(swatch);
+    });
   }
 
   private setupColorPicker(): void {
@@ -59,6 +90,21 @@ export class ColorPalette {
     if (colorInput) {
       colorInput.value = color;
     }
+
+    // Update recent colors
+    this.addToRecent(color);
+
     this.listeners.forEach(cb => cb(color));
+  }
+
+  private addToRecent(color: string): void {
+    const normalized = color.toLowerCase();
+    this.recentColors = this.recentColors.filter(c => c.toLowerCase() !== normalized);
+    this.recentColors.unshift(color);
+    if (this.recentColors.length > 5) {
+      this.recentColors = this.recentColors.slice(0, 5);
+    }
+    localStorage.setItem('xbron_recent_colors', JSON.stringify(this.recentColors));
+    this.updateRecentSwatches();
   }
 }
