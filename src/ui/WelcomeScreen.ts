@@ -63,13 +63,26 @@ export class WelcomeScreen {
   }
 
   private dismiss(): void {
-    this.overlay.classList.add('welcome-hiding');
-    setTimeout(() => {
+    let dismissed = false;
+    const finalize = () => {
+      if (dismissed) return;
+      dismissed = true;
       this.overlay.remove();
       if (this.onDismiss) {
         this.onDismiss();
       }
-    }, 300);
+    };
+
+    this.overlay.classList.add('welcome-hiding');
+
+    // Primary: listen for the CSS animation to end
+    this.overlay.addEventListener('animationend', finalize);
+
+    // Fallback: if animationend does not fire (e.g. animation missing)
+    setTimeout(finalize, 300);
+
+    // Safety net: guarantee dismiss even if tab is backgrounded and timers are throttled
+    setTimeout(finalize, 2000);
   }
 
   public onClose(callback: () => void): void {

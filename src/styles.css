@@ -937,10 +937,6 @@ body.light-theme .workspace-tab.active {
   display: none;
 }
 
-.simple-mode #toolbar-bones {
-  display: none;
-}
-
 .simple-mode #toolbar-subdivide {
   display: none;
 }

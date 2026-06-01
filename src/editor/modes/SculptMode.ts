@@ -317,14 +317,26 @@ export class SculptMode {
 
     let colorOffset = positions.count * 3;
     for (const [a, b, c, d] of sides) {
-      // Triangle 1: a, b, c
-      newPositions[posOffset++] = a.x; newPositions[posOffset++] = a.y; newPositions[posOffset++] = a.z;
-      newPositions[posOffset++] = b.x; newPositions[posOffset++] = b.y; newPositions[posOffset++] = b.z;
-      newPositions[posOffset++] = c.x; newPositions[posOffset++] = c.y; newPositions[posOffset++] = c.z;
-      // Triangle 2: a, c, d
-      newPositions[posOffset++] = a.x; newPositions[posOffset++] = a.y; newPositions[posOffset++] = a.z;
-      newPositions[posOffset++] = c.x; newPositions[posOffset++] = c.y; newPositions[posOffset++] = c.z;
-      newPositions[posOffset++] = d.x; newPositions[posOffset++] = d.y; newPositions[posOffset++] = d.z;
+      if (distance >= 0) {
+        // Triangle 1: a, b, c
+        newPositions[posOffset++] = a.x; newPositions[posOffset++] = a.y; newPositions[posOffset++] = a.z;
+        newPositions[posOffset++] = b.x; newPositions[posOffset++] = b.y; newPositions[posOffset++] = b.z;
+        newPositions[posOffset++] = c.x; newPositions[posOffset++] = c.y; newPositions[posOffset++] = c.z;
+        // Triangle 2: a, c, d
+        newPositions[posOffset++] = a.x; newPositions[posOffset++] = a.y; newPositions[posOffset++] = a.z;
+        newPositions[posOffset++] = c.x; newPositions[posOffset++] = c.y; newPositions[posOffset++] = c.z;
+        newPositions[posOffset++] = d.x; newPositions[posOffset++] = d.y; newPositions[posOffset++] = d.z;
+      } else {
+        // Negative extrusion: reverse winding order so normals face outward
+        // Triangle 1: a, c, b
+        newPositions[posOffset++] = a.x; newPositions[posOffset++] = a.y; newPositions[posOffset++] = a.z;
+        newPositions[posOffset++] = c.x; newPositions[posOffset++] = c.y; newPositions[posOffset++] = c.z;
+        newPositions[posOffset++] = b.x; newPositions[posOffset++] = b.y; newPositions[posOffset++] = b.z;
+        // Triangle 2: a, d, c
+        newPositions[posOffset++] = a.x; newPositions[posOffset++] = a.y; newPositions[posOffset++] = a.z;
+        newPositions[posOffset++] = d.x; newPositions[posOffset++] = d.y; newPositions[posOffset++] = d.z;
+        newPositions[posOffset++] = c.x; newPositions[posOffset++] = c.y; newPositions[posOffset++] = c.z;
+      }
 
       // Set side face vertex colors
       if (newColors) {
