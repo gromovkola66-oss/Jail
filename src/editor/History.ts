@@ -49,7 +49,11 @@ export class History {
   public undo(): void {
     const action = this.undoStack.pop();
     if (action) {
-      action.undo();
+      try {
+        action.undo();
+      } catch (e) {
+        console.warn('History: undo action failed:', e);
+      }
       this.redoStack.push(action);
     }
   }
@@ -57,7 +61,11 @@ export class History {
   public redo(): void {
     const action = this.redoStack.pop();
     if (action) {
-      action.execute();
+      try {
+        action.execute();
+      } catch (e) {
+        console.warn('History: redo action failed:', e);
+      }
       this.undoStack.push(action);
     }
   }

@@ -16,6 +16,7 @@ export class Viewport {
   private cameraMode: 'orbit' | 'free' = 'orbit';
   private cameraModeListeners: ((mode: 'orbit' | 'free') => void)[] = [];
   private onResizeBound: () => void;
+  private resizeObserver: ResizeObserver | null = null;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -63,6 +64,8 @@ export class Viewport {
     // Resize handling
     this.onResizeBound = this.onResize.bind(this);
     window.addEventListener('resize', this.onResizeBound);
+    this.resizeObserver = new ResizeObserver(() => { this.onResize(); });
+    this.resizeObserver.observe(this.container);
 
     // Start animation loop
     this.animate();
@@ -172,5 +175,6 @@ export class Viewport {
     this.controls.dispose();
     this.renderer.dispose();
     window.removeEventListener('resize', this.onResizeBound);
+    if (this.resizeObserver) { this.resizeObserver.disconnect(); }
   }
 }

@@ -16,6 +16,7 @@ export class SelectionManager {
   private cycleIndex: number = 0;
   private lastCycleMouseX: number = 0;
   private lastCycleMouseY: number = 0;
+  private modeGetter: (() => string) | null = null;
 
   constructor(camera: THREE.PerspectiveCamera, scene: THREE.Scene, container: HTMLElement) {
     this.raycaster = new THREE.Raycaster();
@@ -26,6 +27,10 @@ export class SelectionManager {
 
     this.onMouseClickBound = this.onMouseClick.bind(this);
     container.addEventListener('click', this.onMouseClickBound);
+  }
+
+  public setModeGetter(getter: () => string): void {
+    this.modeGetter = getter;
   }
 
   public onSelectionChange(callback: SelectionChangeCallback): void {
@@ -113,6 +118,8 @@ export class SelectionManager {
   }
 
   private onMouseClick(event: MouseEvent): void {
+    if (this.modeGetter && this.modeGetter() !== 'object') return;
+
     const rect = this.container.getBoundingClientRect();
     this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;

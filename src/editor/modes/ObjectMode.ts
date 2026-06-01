@@ -168,7 +168,6 @@ export class ObjectMode {
   public activate(): void {
     this.active = true;
     this.transformControls.enabled = true;
-    this.transformControls.getHelper().visible = !!this.attached;
   }
 
   public deactivate(): void {

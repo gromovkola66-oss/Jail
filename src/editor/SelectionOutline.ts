@@ -35,7 +35,7 @@ export class SelectionOutline {
   }
 
   private addOutline(mesh: THREE.Mesh): void {
-    const edgesGeo = new THREE.EdgesGeometry(mesh.geometry, 30);
+    const edgesGeo = new THREE.EdgesGeometry(mesh.geometry, 1);
     const material = new THREE.LineBasicMaterial({ color: 0xff8800 });
     const lineSegments = new THREE.LineSegments(edgesGeo, material);
 

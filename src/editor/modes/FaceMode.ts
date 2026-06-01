@@ -64,7 +64,6 @@ export class FaceMode {
     this.highlightMesh.visible = false;
     this.highlightMesh.name = '__face_highlight__';
     this.highlightMesh.userData.isEditorInternal = true;
-    this.scene.add(this.highlightMesh);
 
     this.container.addEventListener('click', this.onClickBound);
     this.container.addEventListener('mousemove', this.onMoveBound);
@@ -109,7 +108,7 @@ export class FaceMode {
 
     this.active = false;
     if (this.highlightMesh) {
-      this.scene.remove(this.highlightMesh);
+      this.highlightMesh.removeFromParent();
       this.highlightMesh.geometry.dispose();
       (this.highlightMesh.material as THREE.Material).dispose();
       this.highlightMesh = null;
@@ -315,6 +314,13 @@ export class FaceMode {
 
   private showFaceHighlight(faceIndex: number): void {
     if (!this.targetMesh || !this.highlightMesh) return;
+
+    // Reparent highlight to targetMesh if needed
+    if (this.highlightMesh.parent !== this.targetMesh) {
+      this.highlightMesh.removeFromParent();
+      this.targetMesh.add(this.highlightMesh);
+    }
+
     const geo = this.targetMesh.geometry;
     const positions = geo.attributes.position;
 
@@ -337,9 +343,6 @@ export class FaceMode {
     arr[6] = positions.getX(i2); arr[7] = positions.getY(i2); arr[8] = positions.getZ(i2);
     posAttr.needsUpdate = true;
 
-    this.highlightMesh.position.copy(this.targetMesh.position);
-    this.highlightMesh.rotation.copy(this.targetMesh.rotation);
-    this.highlightMesh.scale.copy(this.targetMesh.scale);
     this.highlightMesh.visible = true;
   }
 
