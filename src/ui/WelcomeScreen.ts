@@ -3,6 +3,8 @@ export class WelcomeScreen {
   private onDismiss: (() => void) | null = null;
 
   constructor() {
+    const existing = document.getElementById('welcome-screen');
+    if (existing) existing.remove();
     this.overlay = this.createOverlay();
     document.body.appendChild(this.overlay);
   }

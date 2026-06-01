@@ -70,6 +70,9 @@ export class ExtrudeTool {
     const basePositions = [v0.clone(), v1.clone(), v2.clone()];
 
     let startMouseY = -1;
+    let startX = -1;
+    let startY = -1;
+    let hasMovedEnough = false;
 
     // Create distance label
     const label = document.createElement('div');
@@ -92,7 +95,18 @@ export class ExtrudeTool {
     };
 
     const onMouseMove = (e: MouseEvent) => {
-      if (startMouseY === -1) startMouseY = e.clientY;
+      if (startMouseY === -1) {
+        startMouseY = e.clientY;
+        startX = e.clientX;
+        startY = e.clientY;
+      }
+      if (!hasMovedEnough) {
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        if (Math.sqrt(dx * dx + dy * dy) >= 5) {
+          hasMovedEnough = true;
+        }
+      }
       const delta = startMouseY - e.clientY; // Up = positive extrusion
       const dist = delta * 0.02;
       updateGeometry(dist);
@@ -111,6 +125,7 @@ export class ExtrudeTool {
     };
 
     const onConfirm = (e: MouseEvent) => {
+      if (!hasMovedEnough) return;
       e.stopPropagation();
       e.preventDefault();
       const finalGeo = mesh.geometry;
@@ -136,19 +151,18 @@ export class ExtrudeTool {
       cleanup();
     };
 
-    // Use setTimeout to avoid the initiating click from immediately confirming
-    setTimeout(() => {
-      container.addEventListener('mousemove', onMouseMove);
-      container.addEventListener('click', onConfirm, { once: true });
-      window.addEventListener('keydown', onCancel);
-      container.addEventListener('contextmenu', onRightClick, { once: true });
-    }, 50);
+    container.addEventListener('mousemove', onMouseMove);
+    container.addEventListener('click', onConfirm);
+    window.addEventListener('keydown', onCancel);
+    container.addEventListener('contextmenu', onRightClick, { once: true });
 
     this.interactiveCleanup = cleanup;
   }
 
   /**
    * Extrude without recording to history (used internally for interactive extrusion).
+   * Converting indexed geometry to non-indexed is intentional for this low-poly editor
+   * since most editing operations (vertex paint, face delete, sculpt) work on non-indexed geometry.
    */
   private extrudeNoHistory(mesh: THREE.Mesh, faceIndex: number, distance: number): void {
     const geo = mesh.geometry;

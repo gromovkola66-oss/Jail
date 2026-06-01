@@ -39,9 +39,8 @@ export class SelectionOutline {
     const material = new THREE.LineBasicMaterial({ color: 0xff8800 });
     const lineSegments = new THREE.LineSegments(edgesGeo, material);
 
-    lineSegments.position.copy(mesh.position);
-    lineSegments.rotation.copy(mesh.rotation);
-    lineSegments.scale.copy(mesh.scale);
+    lineSegments.matrixAutoUpdate = false;
+    lineSegments.matrix.copy(mesh.matrixWorld);
     lineSegments.name = '__selection_outline__';
     lineSegments.userData.isEditorInternal = true;
 
@@ -71,9 +70,7 @@ export class SelectionOutline {
         continue;
       }
 
-      entry.line.position.copy(mesh.position);
-      entry.line.rotation.copy(mesh.rotation);
-      entry.line.scale.copy(mesh.scale);
+      entry.line.matrix.copy(mesh.matrixWorld);
     }
   }
 

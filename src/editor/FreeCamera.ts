@@ -44,7 +44,7 @@ export class FreeCamera {
     this.onMouseUpBound = this.onMouseUp.bind(this);
     this.onMouseMoveBound = this.onMouseMove.bind(this);
     this.onWheelBound = this.onWheel.bind(this);
-    this.onContextMenuBound = (e: Event) => e.preventDefault();
+    this.onContextMenuBound = (e: Event) => { if (this.isLooking) e.preventDefault(); };
   }
 
   public activate(): void {
@@ -196,11 +196,19 @@ export class FreeCamera {
   private onWheel(e: WheelEvent): void {
     if (!this.enabled) return;
     e.preventDefault();
-    // Adjust speed with scroll
-    if (e.deltaY < 0) {
-      this.moveSpeed = Math.min(50, this.moveSpeed * 1.1);
+    if (e.shiftKey) {
+      // Adjust speed with Shift+scroll
+      if (e.deltaY < 0) {
+        this.moveSpeed = Math.min(50, this.moveSpeed * 1.1);
+      } else {
+        this.moveSpeed = Math.max(0.5, this.moveSpeed / 1.1);
+      }
     } else {
-      this.moveSpeed = Math.max(0.5, this.moveSpeed / 1.1);
+      // Zoom: move camera forward/backward
+      const dir = new THREE.Vector3();
+      this.camera.getWorldDirection(dir);
+      const step = -e.deltaY * 0.01;
+      this.camera.position.addScaledVector(dir, step);
     }
   }
 }

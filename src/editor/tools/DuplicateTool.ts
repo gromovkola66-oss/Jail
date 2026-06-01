@@ -14,6 +14,10 @@ export class DuplicateTool {
     const clone = mesh.clone();
     clone.geometry = mesh.geometry.clone();
     clone.material = (mesh.material as THREE.Material).clone();
+    if (clone.geometry.attributes.color) {
+      (clone.material as THREE.MeshStandardMaterial).vertexColors = true;
+      (clone.material as THREE.MeshStandardMaterial).needsUpdate = true;
+    }
     clone.position.x += 1;
     clone.name = mesh.name + ' (копия)';
 

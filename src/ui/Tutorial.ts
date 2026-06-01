@@ -18,6 +18,7 @@ export class Tutorial {
   private tooltip: HTMLDivElement | null = null;
   private currentStep = 0;
   private currentHighlight: Element | null = null;
+  private transitioning = false;
 
   checkFirstLaunch(): void {
     if (localStorage.getItem(STORAGE_KEY)) {
@@ -58,6 +59,8 @@ export class Tutorial {
   }
 
   private showStep(): void {
+    this.transitioning = false;
+
     if (this.currentStep >= STEPS.length) {
       this.finish();
       return;
@@ -100,6 +103,8 @@ export class Tutorial {
     `;
 
     this.tooltip.querySelector('.tutorial-btn-next')!.addEventListener('click', () => {
+      if (this.transitioning) return;
+      this.transitioning = true;
       this.currentStep++;
       this.showStep();
     });

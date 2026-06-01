@@ -49,7 +49,37 @@ export class DeleteTool {
       }
       const newGeo = new THREE.BufferGeometry();
       newGeo.setAttribute('position', new THREE.BufferAttribute(newPositions, 3));
-      newGeo.computeVertexNormals();
+
+      if (geo.attributes.color) {
+        const oldColors = geo.attributes.color;
+        const newColors = new Float32Array(newCount * 3);
+        let colorIdx = 0;
+        for (let i = 0; i < oldColors.count; i++) {
+          if (i >= faceIndex * 3 && i < faceIndex * 3 + 3) continue;
+          newColors[colorIdx * 3] = oldColors.getX(i);
+          newColors[colorIdx * 3 + 1] = oldColors.getY(i);
+          newColors[colorIdx * 3 + 2] = oldColors.getZ(i);
+          colorIdx++;
+        }
+        newGeo.setAttribute('color', new THREE.Float32BufferAttribute(newColors, 3));
+      }
+
+      if (geo.attributes.normal) {
+        const oldNormals = geo.attributes.normal;
+        const newNormals = new Float32Array(newCount * 3);
+        let normalIdx = 0;
+        for (let i = 0; i < oldNormals.count; i++) {
+          if (i >= faceIndex * 3 && i < faceIndex * 3 + 3) continue;
+          newNormals[normalIdx * 3] = oldNormals.getX(i);
+          newNormals[normalIdx * 3 + 1] = oldNormals.getY(i);
+          newNormals[normalIdx * 3 + 2] = oldNormals.getZ(i);
+          normalIdx++;
+        }
+        newGeo.setAttribute('normal', new THREE.Float32BufferAttribute(newNormals, 3));
+      } else {
+        newGeo.computeVertexNormals();
+      }
+
       mesh.geometry = newGeo;
     }
 

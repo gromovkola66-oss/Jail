@@ -76,6 +76,10 @@ export class Editor {
   private statsListeners: ((stats: SceneStats) => void)[] = [];
   private spawnCounter: number = 0;
 
+  public resetSpawnCounter(count: number): void {
+    this.spawnCounter = count;
+  }
+
   constructor(container: HTMLElement) {
     this.viewport = new Viewport(container);
     this.selectionManager = new SelectionManager(

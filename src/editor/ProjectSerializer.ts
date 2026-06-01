@@ -14,6 +14,7 @@ interface SerializedMesh {
   material: {
     color: string;
     flatShading: boolean;
+    vertexColors: boolean;
   };
 }
 
@@ -55,6 +56,7 @@ export class ProjectSerializer {
           material: {
             color: '#' + mat.color.getHexString(),
             flatShading: mat.flatShading || false,
+            vertexColors: mat.vertexColors || false,
           },
         });
       }
@@ -130,7 +132,7 @@ export class ProjectSerializer {
       const mat = new THREE.MeshStandardMaterial({
         color: sm.material.color,
         flatShading: sm.material.flatShading,
-        vertexColors: sm.geometry.colors !== null,
+        vertexColors: (sm.material as any).vertexColors !== undefined ? (sm.material as any).vertexColors : sm.geometry.colors !== null,
       });
 
       const mesh = new THREE.Mesh(geo, mat);
@@ -145,5 +147,6 @@ export class ProjectSerializer {
     this.editor.selectionManager.select(null);
     this.editor.notifyStatsChange();
     this.editor.history.clear();
+    this.editor.resetSpawnCounter(data.meshes.length);
   }
 }
