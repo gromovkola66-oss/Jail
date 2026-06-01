@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LowPoly Редактор</title>
-  <script type="module" crossorigin src="./assets/index-DJ40x2Fw.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-BuScWmP0.css">
+  <script type="module" crossorigin src="./assets/index-Cc47-9OD.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-C7CcR2WC.css">
 </head>
 <body>
   <div id="app">
@@ -20,7 +20,7 @@
       </div>
       <div class="toolbar-group">
         <label class="toolbar-label">Количество полигонов:
-          <input type="range" id="detail-slider" min="1" max="64" value="4" />
+          <input type="range" id="detail-slider" min="1" max="256" value="4" />
           <span id="detail-value">4</span>
         </label>
       </div>
@@ -29,7 +29,6 @@
         <button class="mode-btn" data-mode="vertex">Вершины</button>
         <button class="mode-btn" data-mode="edge">Рёбра</button>
         <button class="mode-btn" data-mode="face">Грани</button>
-        <button class="mode-btn" data-mode="weightpaint">Веса</button>
         <button class="mode-btn" data-mode="sculpt">Скульптинг</button>
       </div>
       <div class="toolbar-group">
@@ -202,6 +201,7 @@
       <span id="selection-count"></span>
       <span class="status-separator">|</span>
       <span id="camera-mode-display">Камера: Орбита</span>
+      <span id="status-hint"></span>
     </div>
   </div>
 
