@@ -126,6 +126,15 @@ export class Viewport {
     this.cameraModeListeners.push(cb);
   }
 
+  public resetCamera(): void {
+    if (this.cameraMode === 'free') {
+      this.setCameraMode('orbit');
+    }
+    this.camera.position.set(5, 5, 5);
+    this.controls.target.set(0, 0, 0);
+    this.controls.update();
+  }
+
   public dispose(): void {
     cancelAnimationFrame(this.animationId);
     this.controls.dispose();

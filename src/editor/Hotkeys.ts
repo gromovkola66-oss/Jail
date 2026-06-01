@@ -143,6 +143,9 @@ export class Hotkeys {
           this.editor.sculptMode.setRadius(Math.min(5.0, this.editor.sculptMode.getRadius() + 0.1));
         }
         break;
+      case 'home':
+        this.editor.viewport.resetCamera();
+        break;
     }
   }
 

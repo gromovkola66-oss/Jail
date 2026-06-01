@@ -1329,3 +1329,38 @@ body.light-theme .workspace-tab.active {
   border-color: #6ab0f9;
   color: #ffffff;
 }
+
+/* Toast notifications */
+.toast-notification {
+  position: fixed;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: #16213e;
+  border: 1px solid #4a90d9;
+  color: #e0e0e0;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  z-index: 60000;
+  opacity: 0;
+  transition: opacity 0.3s, transform 0.3s;
+  pointer-events: none;
+}
+
+.toast-notification.toast-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.toast-notification.toast-hiding {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-10px);
+}
+
+body.light-theme .toast-notification {
+  background: #ffffff;
+  border-color: #4a90d9;
+  color: #333;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}

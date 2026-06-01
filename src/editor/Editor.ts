@@ -29,6 +29,7 @@ import { BoneSystem } from './animation/BoneSystem';
 import { Timeline, KeyframeTransform } from './animation/Timeline';
 import { AnimationPlayer } from './animation/AnimationPlayer';
 import { AnimationPresets } from './animation/AnimationPresets';
+import { Toast } from '../ui/Toast';
 
 export type PrimitiveType = 'cube' | 'sphere' | 'cylinder' | 'plane' | 'cone';
 export type ToolMode = 'select' | 'move' | 'rotate' | 'scale' | 'extrude' | 'duplicate' | 'delete' | 'paint';
@@ -73,6 +74,7 @@ export class Editor {
   public animationPresets: AnimationPresets;
 
   private statsListeners: ((stats: SceneStats) => void)[] = [];
+  private primitiveCounter: number = 0;
 
   constructor(container: HTMLElement) {
     this.viewport = new Viewport(container);
@@ -246,8 +248,9 @@ export class Editor {
         break;
     }
 
-    // Place at a slight random offset so objects don't stack perfectly
-    mesh.position.y = 0.5;
+    // Place at an offset so objects don't stack perfectly
+    mesh.position.set(this.primitiveCounter * 2, 0.5, 0);
+    this.primitiveCounter++;
 
     const scene = this.viewport.scene;
 
@@ -330,6 +333,7 @@ export class Editor {
       }
       this.selectionManager.select(null);
       this.notifyStatsChange();
+      Toast.show('Объект удалён (Ctrl+Z чтобы вернуть)');
     } else if (mode === 'face') {
       const selected = this.selectionManager.getSelected();
       if (!selected) return;

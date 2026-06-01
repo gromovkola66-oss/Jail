@@ -22,6 +22,7 @@ import { QuickActions } from './ui/QuickActions';
 import { Tutorial } from './ui/Tutorial';
 import { SculptPanel } from './ui/SculptPanel';
 import { DisabledButtons } from './ui/DisabledButtons';
+import { UnsavedTracker } from './editor/UnsavedTracker';
 
 function startEditor(): void {
   const viewport = document.getElementById('viewport');
@@ -31,6 +32,9 @@ function startEditor(): void {
   }
 
   const editor = new Editor(viewport);
+
+  // Unsaved changes tracker
+  const unsavedTracker = new UnsavedTracker(editor.history);
 
   // Initialize UI
   new Toolbar(editor);
@@ -139,6 +143,7 @@ function startEditor(): void {
 
   hotkeys.onSave = () => {
     projectSerializer.saveProject();
+    unsavedTracker.markSaved();
   };
 
   hotkeys.onOpen = () => {

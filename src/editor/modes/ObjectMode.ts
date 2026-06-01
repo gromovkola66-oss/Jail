@@ -32,6 +32,7 @@ export class ObjectMode {
     this.gridSnap = gridSnap;
 
     this.transformControls = new TransformControls(camera, renderer.domElement);
+    this.transformControls.size = 1.5;
     this.transformControls.addEventListener('dragging-changed', (event) => {
       const dragging = event.value as boolean;
       this.orbitControls.enabled = !dragging;
