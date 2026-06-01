@@ -921,40 +921,8 @@ body.light-theme .workspace-tab.active {
   border-bottom-color: #4a90d9;
 }
 
-/* ===== Simple Mode Hiding ===== */
-.simple-mode .mode-btn[data-mode="vertex"],
-.simple-mode .mode-btn[data-mode="edge"],
-.simple-mode .mode-btn[data-mode="weightpaint"] {
-  display: none;
-}
-
-.simple-mode #btn-loopcut,
-.simple-mode #btn-merge-vertices {
-  display: none;
-}
-
-.simple-mode #toolbar-booleans {
-  display: none;
-}
-
-.simple-mode #toolbar-subdivide {
-  display: none;
-}
-
-.simple-mode #toolbar-mirror {
-  display: none;
-}
-
 /* ===== Workspace Tab Visibility ===== */
 .tab-modeling #timeline-panel {
-  display: none;
-}
-
-.tab-modeling #toolbar-bones {
-  display: none;
-}
-
-.tab-modeling .mode-btn[data-mode="weightpaint"] {
   display: none;
 }
 
@@ -964,6 +932,40 @@ body.light-theme .workspace-tab.active {
 
 .tab-animation #toolbar-subdivide {
   display: none;
+}
+
+/* ===== Texturing Tab ===== */
+.tab-texturing #toolbar .toolbar-group:first-child {
+  display: none;
+}
+
+.tab-texturing #toolbar-mirror,
+.tab-texturing #toolbar-subdivide,
+.tab-texturing #toolbar-booleans,
+.tab-texturing #toolbar-bones {
+  display: none;
+}
+
+.tab-texturing .mode-group {
+  display: none;
+}
+
+/* ===== Disabled Buttons ===== */
+.disabled-btn {
+  opacity: 0.5;
+  cursor: not-allowed !important;
+}
+
+.disabled-btn:hover {
+  background: inherit;
+  border-color: inherit;
+}
+
+/* ===== Status Hint ===== */
+#status-hint {
+  color: #7ab0e0;
+  margin-left: auto;
+  font-style: italic;
 }
 
 /* ===== Templates Modal ===== */

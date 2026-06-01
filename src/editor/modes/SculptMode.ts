@@ -208,6 +208,9 @@ export class SculptMode {
     // Only intercept LMB
     if (event.button !== 0) return;
 
+    // If Alt is held, let OrbitControls handle the event (camera orbit)
+    if (event.altKey) return;
+
     // Prevent OrbitControls from receiving LMB
     event.stopPropagation();
 

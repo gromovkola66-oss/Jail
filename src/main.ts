@@ -16,12 +16,12 @@ import { LightManager } from './editor/LightManager';
 import { SkyboxManager } from './editor/SkyboxManager';
 import { TimelinePanel } from './ui/TimelinePanel';
 import { WelcomeScreen } from './ui/WelcomeScreen';
-import { ModeToggle } from './ui/ModeToggle';
 import { WorkspaceTabs } from './ui/WorkspaceTabs';
 import { TemplatesPanel } from './ui/TemplatesPanel';
 import { QuickActions } from './ui/QuickActions';
 import { Tutorial } from './ui/Tutorial';
 import { SculptPanel } from './ui/SculptPanel';
+import { DisabledButtons } from './ui/DisabledButtons';
 
 function startEditor(): void {
   const viewport = document.getElementById('viewport');
@@ -36,7 +36,7 @@ function startEditor(): void {
   new Toolbar(editor);
   new ToolPanel(editor);
   new PropertiesPanel(editor);
-  new StatusBar(editor);
+  const statusBar = new StatusBar(editor);
   new Outliner(editor);
 
   // New features
@@ -48,17 +48,30 @@ function startEditor(): void {
   new SkyboxManager(editor);
 
   // Workspace tabs
-  new WorkspaceTabs();
+  const workspaceTabs = new WorkspaceTabs();
 
-  // Mode toggle
-  const modeToggle = new ModeToggle();
-  const toolbar = document.getElementById('toolbar');
-  if (toolbar) {
-    const toggleGroup = document.createElement('div');
-    toggleGroup.className = 'toolbar-group';
-    toggleGroup.appendChild(modeToggle.getButton());
-    toolbar.appendChild(toggleGroup);
-  }
+  // Subscribe to workspace tab changes
+  workspaceTabs.onTabChange((tab, _prevTab) => {
+    if (tab === 'texturing') {
+      editor.setMode('face');
+      editor.setTool('paint');
+      // Update mode buttons UI
+      modeButtons.forEach(b => b.classList.remove('active'));
+      const faceBtn = document.querySelector<HTMLButtonElement>('.mode-btn[data-mode="face"]');
+      if (faceBtn) faceBtn.classList.add('active');
+      const modeDisplay = document.getElementById('mode-display');
+      if (modeDisplay) modeDisplay.textContent = '\u0420\u0435\u0436\u0438\u043C: \u0413\u0440\u0430\u043D\u0438';
+      statusBar.setHint('\u0412\u044B\u0431\u0435\u0440\u0438\u0442\u0435 \u0446\u0432\u0435\u0442 \u2192 \u041D\u0430\u0436\u043C\u0438\u0442\u0435 \u043D\u0430 \u0433\u0440\u0430\u043D\u044C | Alt+\u041A\u043B\u0438\u043A=\u043F\u0438\u043F\u0435\u0442\u043A\u0430 | Shift+\u041A\u043B\u0438\u043A=\u0437\u0430\u043B\u0438\u0432\u043A\u0430');
+    } else {
+      editor.setMode('object');
+      editor.setTool('select');
+      modeButtons.forEach(b => b.classList.remove('active'));
+      const objBtn = document.querySelector<HTMLButtonElement>('.mode-btn[data-mode="object"]');
+      if (objBtn) objBtn.classList.add('active');
+      const modeDisplay = document.getElementById('mode-display');
+      if (modeDisplay) modeDisplay.textContent = '\u0420\u0435\u0436\u0438\u043C: \u041E\u0431\u044A\u0435\u043A\u0442';
+    }
+  });
 
   // Project serialization
   const projectSerializer = new ProjectSerializer(editor);
@@ -93,6 +106,9 @@ function startEditor(): void {
   // Sculpt panel
   new SculptPanel(editor);
 
+  // Disabled buttons feedback
+  new DisabledButtons(editor, statusBar);
+
   // Camera mode toggle
   const cameraModeBtn = document.getElementById('btn-camera-mode');
   if (cameraModeBtn) {
@@ -100,7 +116,7 @@ function startEditor(): void {
       editor.viewport.toggleCameraMode();
     });
     editor.viewport.onCameraModeChange((mode) => {
-      cameraModeBtn.textContent = mode === 'orbit' ? '\u0421\u0432\u043E\u0431\u043E\u0434\u043D\u0430\u044F' : '\u041E\u0440\u0431\u0438\u0442\u0430';
+      cameraModeBtn.textContent = mode === 'orbit' ? '\u0421\u0432\u043E\u0431\u043E\u0434\u043D\u0430\u044F \u043A\u0430\u043C\u0435\u0440\u0430' : '\u041E\u0440\u0431\u0438\u0442\u0430\u043B\u044C\u043D\u0430\u044F \u043A\u0430\u043C\u0435\u0440\u0430';
       cameraModeBtn.classList.toggle('active', mode === 'free');
     });
   }

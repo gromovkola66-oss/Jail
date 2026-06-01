@@ -21,6 +21,9 @@ export class FaceMode {
   private onMoveBound: (e: MouseEvent) => void;
   private onKeyDownBound: (e: KeyboardEvent) => void;
   private onKeyUpBound: (e: KeyboardEvent) => void;
+  private onMouseDownBound: (e: MouseEvent) => void;
+  private onMouseUpBound: (e: MouseEvent) => void;
+  private isPainting: boolean = false;
 
   constructor(scene: THREE.Scene, camera: THREE.Camera, container: HTMLElement, history: History) {
     this.scene = scene;
@@ -34,6 +37,8 @@ export class FaceMode {
     this.onMoveBound = this.onMouseMove.bind(this);
     this.onKeyDownBound = this.onKeyDown.bind(this);
     this.onKeyUpBound = this.onKeyUp.bind(this);
+    this.onMouseDownBound = this.onMouseDown.bind(this);
+    this.onMouseUpBound = this.onMouseUp.bind(this);
   }
 
   public activate(mesh: THREE.Mesh | null): void {
@@ -59,6 +64,8 @@ export class FaceMode {
 
     this.container.addEventListener('click', this.onClickBound);
     this.container.addEventListener('mousemove', this.onMoveBound);
+    this.container.addEventListener('mousedown', this.onMouseDownBound);
+    window.addEventListener('mouseup', this.onMouseUpBound);
     window.addEventListener('keydown', this.onKeyDownBound);
     window.addEventListener('keyup', this.onKeyUpBound);
   }
@@ -76,9 +83,12 @@ export class FaceMode {
     this.selectedFaceIndices = [];
     this.container.removeEventListener('click', this.onClickBound);
     this.container.removeEventListener('mousemove', this.onMoveBound);
+    this.container.removeEventListener('mousedown', this.onMouseDownBound);
+    window.removeEventListener('mouseup', this.onMouseUpBound);
     window.removeEventListener('keydown', this.onKeyDownBound);
     window.removeEventListener('keyup', this.onKeyUpBound);
     this.container.classList.remove('eyedropper-cursor');
+    this.isPainting = false;
   }
 
   public isActive(): boolean {
@@ -126,9 +136,25 @@ export class FaceMode {
 
     if (intersects.length > 0 && intersects[0].faceIndex != null) {
       this.showFaceHighlight(intersects[0].faceIndex);
+      // Continuous painting while dragging
+      if (this.isPainting && this.paintingEnabled && !event.altKey) {
+        this.paintFace(intersects[0].faceIndex);
+      }
     } else {
       this.highlightMesh.visible = false;
     }
+  }
+
+  private onMouseDown(event: MouseEvent): void {
+    if (event.button !== 0) return;
+    if (this.paintingEnabled && !event.altKey && !event.shiftKey) {
+      this.isPainting = true;
+    }
+  }
+
+  private onMouseUp(event: MouseEvent): void {
+    if (event.button !== 0) return;
+    this.isPainting = false;
   }
 
   private onClick(event: MouseEvent): void {
@@ -144,6 +170,12 @@ export class FaceMode {
       if (this.paintingEnabled && event.altKey) {
         const pickedColor = this.pickFaceColor(faceIndex);
         this.colorPickListeners.forEach(cb => cb(pickedColor));
+        return;
+      }
+
+      // Flood fill: Shift+Click fills adjacent same-colored faces
+      if (this.paintingEnabled && event.shiftKey) {
+        this.floodFill(faceIndex);
         return;
       }
 
@@ -235,6 +267,124 @@ export class FaceMode {
     this.highlightMesh.rotation.copy(this.targetMesh.rotation);
     this.highlightMesh.scale.copy(this.targetMesh.scale);
     this.highlightMesh.visible = true;
+  }
+
+  private floodFill(startFaceIndex: number): void {
+    if (!this.targetMesh) return;
+    const mesh = this.targetMesh;
+    const geo = mesh.geometry;
+
+    // Ensure vertex colors exist
+    if (!geo.attributes.color) {
+      const count = geo.attributes.position.count;
+      const colors = new Float32Array(count * 3);
+      const mat = mesh.material as THREE.MeshStandardMaterial;
+      const baseColor = mat.color;
+      for (let i = 0; i < count; i++) {
+        colors[i * 3] = baseColor.r;
+        colors[i * 3 + 1] = baseColor.g;
+        colors[i * 3 + 2] = baseColor.b;
+      }
+      geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+      mat.vertexColors = true;
+      mat.needsUpdate = true;
+    }
+
+    const colorAttr = geo.attributes.color;
+    const posAttr = geo.attributes.position;
+    const index = geo.index;
+    const faceCount = index ? index.count / 3 : posAttr.count / 3;
+
+    // Get the color of the start face
+    const getVertexIndex = (faceIdx: number, vertIdx: number): number => {
+      if (index) return index.getX(faceIdx * 3 + vertIdx);
+      return faceIdx * 3 + vertIdx;
+    };
+
+    const i0 = getVertexIndex(startFaceIndex, 0);
+    const targetColor = new THREE.Color(
+      colorAttr.getX(i0), colorAttr.getY(i0), colorAttr.getZ(i0)
+    );
+
+    const paintColor = new THREE.Color(this.paintColor);
+
+    // If target color is same as paint color, do nothing
+    if (targetColor.equals(paintColor)) return;
+
+    // Check if a face has the target color
+    const faceHasColor = (faceIdx: number): boolean => {
+      const vi = getVertexIndex(faceIdx, 0);
+      const r = colorAttr.getX(vi);
+      const g = colorAttr.getY(vi);
+      const b = colorAttr.getZ(vi);
+      return Math.abs(r - targetColor.r) < 0.01 &&
+             Math.abs(g - targetColor.g) < 0.01 &&
+             Math.abs(b - targetColor.b) < 0.01;
+    };
+
+    // Build adjacency: faces that share at least one vertex position
+    const posKey = (vi: number): string => {
+      const x = Math.round(posAttr.getX(vi) * 1000);
+      const y = Math.round(posAttr.getY(vi) * 1000);
+      const z = Math.round(posAttr.getZ(vi) * 1000);
+      return `${x},${y},${z}`;
+    };
+
+    const vertexToFaces = new Map<string, number[]>();
+    for (let f = 0; f < faceCount; f++) {
+      for (let v = 0; v < 3; v++) {
+        const vi = getVertexIndex(f, v);
+        const key = posKey(vi);
+        if (!vertexToFaces.has(key)) vertexToFaces.set(key, []);
+        vertexToFaces.get(key)!.push(f);
+      }
+    }
+
+    const getAdjacentFaces = (faceIdx: number): number[] => {
+      const neighbors = new Set<number>();
+      for (let v = 0; v < 3; v++) {
+        const vi = getVertexIndex(faceIdx, v);
+        const key = posKey(vi);
+        const faces = vertexToFaces.get(key);
+        if (faces) {
+          for (const f of faces) {
+            if (f !== faceIdx) neighbors.add(f);
+          }
+        }
+      }
+      return Array.from(neighbors);
+    };
+
+    // BFS flood fill
+    const visited = new Set<number>();
+    const queue: number[] = [startFaceIndex];
+    visited.add(startFaceIndex);
+    const filledFaces: number[] = [];
+
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      if (!faceHasColor(current)) continue;
+      filledFaces.push(current);
+
+      const neighbors = getAdjacentFaces(current);
+      for (const n of neighbors) {
+        if (!visited.has(n) && faceHasColor(n)) {
+          visited.add(n);
+          queue.push(n);
+        }
+      }
+    }
+
+    // Paint all filled faces
+    for (const fi of filledFaces) {
+      const v0 = getVertexIndex(fi, 0);
+      const v1 = getVertexIndex(fi, 1);
+      const v2 = getVertexIndex(fi, 2);
+      colorAttr.setXYZ(v0, paintColor.r, paintColor.g, paintColor.b);
+      colorAttr.setXYZ(v1, paintColor.r, paintColor.g, paintColor.b);
+      colorAttr.setXYZ(v2, paintColor.r, paintColor.g, paintColor.b);
+    }
+    colorAttr.needsUpdate = true;
   }
 
   private paintFace(faceIndex: number): void {
