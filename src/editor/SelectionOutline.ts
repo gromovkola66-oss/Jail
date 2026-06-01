@@ -1,10 +1,15 @@
 import * as THREE from 'three';
 import { SelectionManager } from './SelectionManager';
 
+interface OutlineEntry {
+  line: THREE.LineSegments;
+  geometry: THREE.BufferGeometry;
+}
+
 export class SelectionOutline {
   private scene: THREE.Scene;
   private selectionManager: SelectionManager;
-  private outlines: Map<THREE.Mesh, THREE.LineSegments> = new Map();
+  private outlines: Map<THREE.Mesh, OutlineEntry> = new Map();
 
   constructor(scene: THREE.Scene, selectionManager: SelectionManager) {
     this.scene = scene;
@@ -15,10 +20,10 @@ export class SelectionOutline {
 
   private updateOutlines(): void {
     // Remove all existing outlines
-    for (const [, line] of this.outlines) {
-      this.scene.remove(line);
-      line.geometry.dispose();
-      (line.material as THREE.Material).dispose();
+    for (const [, entry] of this.outlines) {
+      this.scene.remove(entry.line);
+      entry.line.geometry.dispose();
+      (entry.line.material as THREE.Material).dispose();
     }
     this.outlines.clear();
 
@@ -41,31 +46,42 @@ export class SelectionOutline {
     lineSegments.userData.isEditorInternal = true;
 
     this.scene.add(lineSegments);
-    this.outlines.set(mesh, lineSegments);
+    this.outlines.set(mesh, { line: lineSegments, geometry: mesh.geometry });
   }
 
   public update(): void {
     // Sync outline transforms with source meshes
-    for (const [mesh, line] of this.outlines) {
+    for (const [mesh, entry] of this.outlines) {
       if (!mesh.parent) {
         // Mesh was removed from scene
-        this.scene.remove(line);
-        line.geometry.dispose();
-        (line.material as THREE.Material).dispose();
+        this.scene.remove(entry.line);
+        entry.line.geometry.dispose();
+        (entry.line.material as THREE.Material).dispose();
         this.outlines.delete(mesh);
         continue;
       }
-      line.position.copy(mesh.position);
-      line.rotation.copy(mesh.rotation);
-      line.scale.copy(mesh.scale);
+
+      // If geometry has changed, rebuild the outline
+      if (mesh.geometry !== entry.geometry) {
+        this.scene.remove(entry.line);
+        entry.line.geometry.dispose();
+        (entry.line.material as THREE.Material).dispose();
+        this.outlines.delete(mesh);
+        this.addOutline(mesh);
+        continue;
+      }
+
+      entry.line.position.copy(mesh.position);
+      entry.line.rotation.copy(mesh.rotation);
+      entry.line.scale.copy(mesh.scale);
     }
   }
 
   public dispose(): void {
-    for (const [, line] of this.outlines) {
-      this.scene.remove(line);
-      line.geometry.dispose();
-      (line.material as THREE.Material).dispose();
+    for (const [, entry] of this.outlines) {
+      this.scene.remove(entry.line);
+      entry.line.geometry.dispose();
+      (entry.line.material as THREE.Material).dispose();
     }
     this.outlines.clear();
   }

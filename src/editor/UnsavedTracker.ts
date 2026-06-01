@@ -2,26 +2,13 @@ import { History } from './History';
 
 export class UnsavedTracker {
   private dirty: boolean = false;
-  private history: History;
   private originalTitle: string;
 
   constructor(history: History) {
-    this.history = history;
     this.originalTitle = document.title || 'XBRON Studio';
 
-    // Monkey-patch history to detect changes
-    const originalPush = history.push.bind(history);
-    const originalRecord = history.record.bind(history);
-
-    history.push = (action) => {
-      originalPush(action);
-      this.markDirty();
-    };
-
-    history.record = (action) => {
-      originalRecord(action);
-      this.markDirty();
-    };
+    // Use proper listener instead of monkey-patching
+    history.onAction(() => this.markDirty());
 
     window.addEventListener('beforeunload', (e) => {
       if (this.dirty) {

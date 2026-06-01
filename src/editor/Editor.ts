@@ -74,7 +74,6 @@ export class Editor {
   public animationPresets: AnimationPresets;
 
   private statsListeners: ((stats: SceneStats) => void)[] = [];
-  private primitiveCounter: number = 0;
 
   constructor(container: HTMLElement) {
     this.viewport = new Viewport(container);
@@ -248,9 +247,14 @@ export class Editor {
         break;
     }
 
-    // Place at an offset so objects don't stack perfectly
-    mesh.position.set(this.primitiveCounter * 2, 0.5, 0);
-    this.primitiveCounter++;
+    // Place at an offset based on existing user meshes so objects don't stack
+    let meshCount = 0;
+    this.viewport.scene.traverse((obj) => {
+      if (obj instanceof THREE.Mesh && !obj.userData.isEditorInternal && !obj.name.startsWith('__')) {
+        meshCount++;
+      }
+    });
+    mesh.position.set(meshCount * 2, 0.5, 0);
 
     const scene = this.viewport.scene;
 

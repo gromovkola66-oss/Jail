@@ -30,13 +30,7 @@ export class ExtrudeTool {
     const edge2 = new THREE.Vector3().subVectors(v2, v0);
     const normal = new THREE.Vector3().crossVectors(edge1, edge2).normalize();
 
-    // Perform extrude with distance=0 to create side face topology
-    this.extrude(mesh, faceIndex, 0);
-    // Undo the history entry that extrude() recorded - we will record our own at the end
-    this.history.undo();
-    // But the geometry was reverted by undo, so re-apply the extruded geometry
-    // Actually undo reverts the geometry. We need to re-do the extrusion without recording.
-    // Let's just manually do the extrude with distance=0 again without history
+    // Perform extrude with distance=0 to create side face topology (without history)
     this.extrudeNoHistory(mesh, faceIndex, 0);
 
     // The mesh now has extruded topology with distance=0

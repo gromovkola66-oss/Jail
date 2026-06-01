@@ -8,6 +8,17 @@ export class History {
   private undoStack: Action[] = [];
   private redoStack: Action[] = [];
   private maxSize: number = 50;
+  private actionListeners: (() => void)[] = [];
+
+  public onAction(callback: () => void): void {
+    this.actionListeners.push(callback);
+  }
+
+  private notifyListeners(): void {
+    for (const cb of this.actionListeners) {
+      cb();
+    }
+  }
 
   public push(action: Action): void {
     action.execute();
@@ -18,6 +29,8 @@ export class History {
     if (this.undoStack.length > this.maxSize) {
       this.undoStack.shift();
     }
+
+    this.notifyListeners();
   }
 
   /** Record an already-executed action without re-executing it. */
@@ -29,6 +42,8 @@ export class History {
     if (this.undoStack.length > this.maxSize) {
       this.undoStack.shift();
     }
+
+    this.notifyListeners();
   }
 
   public undo(): void {

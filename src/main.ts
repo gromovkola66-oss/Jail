@@ -462,13 +462,17 @@ function startEditor(): void {
     }
   });
 
-  // Update cursor when tool changes to paint
+  // Update cursor when tool changes
   const originalSetTool = editor.setTool.bind(editor);
   editor.setTool = (tool) => {
     originalSetTool(tool);
-    if (editor.modeManager.getMode() === 'face' && tool === 'paint') {
+    if (editor.modeManager.getMode() === 'face') {
       viewport.classList.remove('cursor-default', 'cursor-move', 'cursor-crosshair', 'cursor-cell');
-      viewport.classList.add('cursor-cell');
+      if (tool === 'paint') {
+        viewport.classList.add('cursor-cell');
+      } else {
+        viewport.classList.add('cursor-default');
+      }
     }
   };
 }
