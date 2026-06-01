@@ -25,6 +25,10 @@ export class FaceMode {
   private onMouseUpBound: (e: MouseEvent) => void;
   private isPainting: boolean = false;
 
+  // Stroke tracking for batched undo
+  private strokeOldColors: Map<number, { i0: number; i1: number; i2: number; c0: number[]; c1: number[]; c2: number[] }> = new Map();
+  private strokeColor: THREE.Color | null = null;
+
   constructor(scene: THREE.Scene, camera: THREE.Camera, container: HTMLElement, history: History) {
     this.scene = scene;
     this.camera = camera;
@@ -149,12 +153,46 @@ export class FaceMode {
     if (event.button !== 0) return;
     if (this.paintingEnabled && !event.altKey && !event.shiftKey) {
       this.isPainting = true;
+      this.strokeOldColors = new Map();
+      this.strokeColor = new THREE.Color(this.paintColor);
     }
   }
 
   private onMouseUp(event: MouseEvent): void {
     if (event.button !== 0) return;
+    if (this.isPainting && this.strokeOldColors.size > 0 && this.targetMesh && this.strokeColor) {
+      const mesh = this.targetMesh;
+      const oldColorsMap = new Map(this.strokeOldColors);
+      const paintR = this.strokeColor.r;
+      const paintG = this.strokeColor.g;
+      const paintB = this.strokeColor.b;
+
+      const action: Action = {
+        description: 'Покраска граней',
+        execute: () => {
+          const ca = mesh.geometry.attributes.color;
+          for (const [, entry] of oldColorsMap) {
+            ca.setXYZ(entry.i0, paintR, paintG, paintB);
+            ca.setXYZ(entry.i1, paintR, paintG, paintB);
+            ca.setXYZ(entry.i2, paintR, paintG, paintB);
+          }
+          ca.needsUpdate = true;
+        },
+        undo: () => {
+          const ca = mesh.geometry.attributes.color;
+          for (const [, entry] of oldColorsMap) {
+            ca.setXYZ(entry.i0, entry.c0[0], entry.c0[1], entry.c0[2]);
+            ca.setXYZ(entry.i1, entry.c1[0], entry.c1[1], entry.c1[2]);
+            ca.setXYZ(entry.i2, entry.c2[0], entry.c2[1], entry.c2[2]);
+          }
+          ca.needsUpdate = true;
+        },
+      };
+      this.history.record(action);
+    }
     this.isPainting = false;
+    this.strokeOldColors = new Map();
+    this.strokeColor = null;
   }
 
   private onClick(event: MouseEvent): void {
@@ -475,37 +513,55 @@ export class FaceMode {
       i2 = faceIndex * 3 + 2;
     }
 
-    // Save old colors for undo
-    const oldColors = [
-      [colorAttr.getX(i0), colorAttr.getY(i0), colorAttr.getZ(i0)],
-      [colorAttr.getX(i1), colorAttr.getY(i1), colorAttr.getZ(i1)],
-      [colorAttr.getX(i2), colorAttr.getY(i2), colorAttr.getZ(i2)],
-    ];
+    if (this.isPainting) {
+      // Stroke mode: collect old colors only on first paint per face, skip per-face history
+      if (!this.strokeOldColors.has(faceIndex)) {
+        this.strokeOldColors.set(faceIndex, {
+          i0, i1, i2,
+          c0: [colorAttr.getX(i0), colorAttr.getY(i0), colorAttr.getZ(i0)],
+          c1: [colorAttr.getX(i1), colorAttr.getY(i1), colorAttr.getZ(i1)],
+          c2: [colorAttr.getX(i2), colorAttr.getY(i2), colorAttr.getZ(i2)],
+        });
+      }
 
-    // Apply new color
-    colorAttr.setXYZ(i0, color.r, color.g, color.b);
-    colorAttr.setXYZ(i1, color.r, color.g, color.b);
-    colorAttr.setXYZ(i2, color.r, color.g, color.b);
-    colorAttr.needsUpdate = true;
+      // Apply new color
+      colorAttr.setXYZ(i0, color.r, color.g, color.b);
+      colorAttr.setXYZ(i1, color.r, color.g, color.b);
+      colorAttr.setXYZ(i2, color.r, color.g, color.b);
+      colorAttr.needsUpdate = true;
+    } else {
+      // Single-click mode: record immediately
+      const oldColors = [
+        [colorAttr.getX(i0), colorAttr.getY(i0), colorAttr.getZ(i0)],
+        [colorAttr.getX(i1), colorAttr.getY(i1), colorAttr.getZ(i1)],
+        [colorAttr.getX(i2), colorAttr.getY(i2), colorAttr.getZ(i2)],
+      ];
 
-    const action: Action = {
-      description: 'Покраска грани',
-      execute: () => {
-        const ca = mesh.geometry.attributes.color;
-        ca.setXYZ(i0, color.r, color.g, color.b);
-        ca.setXYZ(i1, color.r, color.g, color.b);
-        ca.setXYZ(i2, color.r, color.g, color.b);
-        ca.needsUpdate = true;
-      },
-      undo: () => {
-        const ca = mesh.geometry.attributes.color;
-        ca.setXYZ(i0, oldColors[0][0], oldColors[0][1], oldColors[0][2]);
-        ca.setXYZ(i1, oldColors[1][0], oldColors[1][1], oldColors[1][2]);
-        ca.setXYZ(i2, oldColors[2][0], oldColors[2][1], oldColors[2][2]);
-        ca.needsUpdate = true;
-      },
-    };
+      // Apply new color
+      colorAttr.setXYZ(i0, color.r, color.g, color.b);
+      colorAttr.setXYZ(i1, color.r, color.g, color.b);
+      colorAttr.setXYZ(i2, color.r, color.g, color.b);
+      colorAttr.needsUpdate = true;
 
-    this.history.record(action);
+      const action: Action = {
+        description: 'Покраска грани',
+        execute: () => {
+          const ca = mesh.geometry.attributes.color;
+          ca.setXYZ(i0, color.r, color.g, color.b);
+          ca.setXYZ(i1, color.r, color.g, color.b);
+          ca.setXYZ(i2, color.r, color.g, color.b);
+          ca.needsUpdate = true;
+        },
+        undo: () => {
+          const ca = mesh.geometry.attributes.color;
+          ca.setXYZ(i0, oldColors[0][0], oldColors[0][1], oldColors[0][2]);
+          ca.setXYZ(i1, oldColors[1][0], oldColors[1][1], oldColors[1][2]);
+          ca.setXYZ(i2, oldColors[2][0], oldColors[2][1], oldColors[2][2]);
+          ca.needsUpdate = true;
+        },
+      };
+
+      this.history.record(action);
+    }
   }
 }

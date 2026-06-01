@@ -80,6 +80,13 @@ export class VertexMode {
     this.mirrorTool = tool;
   }
 
+  public refreshMarkers(): void {
+    this.clearMarkers();
+    if (this.targetMesh && this.active) {
+      this.createMarkers();
+    }
+  }
+
   public updateMesh(mesh: THREE.Mesh | null): void {
     this.clearMarkers();
     this.targetMesh = mesh;

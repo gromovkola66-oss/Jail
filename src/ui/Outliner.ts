@@ -174,26 +174,19 @@ export class Outliner {
     if (fromIndex < 0 || fromIndex >= meshes.length || toIndex < 0 || toIndex >= meshes.length) return;
 
     const scene = this.editor.viewport.scene;
-    const meshToMove = meshes[fromIndex];
 
-    // Remove and re-add at correct position relative to other meshes
-    scene.remove(meshToMove);
+    // Remove all user meshes from scene
+    for (const mesh of meshes) {
+      scene.remove(mesh);
+    }
 
-    // Get the index in scene.children where the target mesh is
-    const targetMesh = meshes[toIndex > fromIndex ? toIndex : toIndex];
-    const sceneIdx = scene.children.indexOf(targetMesh);
+    // Reorder the array: move item from fromIndex to toIndex
+    const [moved] = meshes.splice(fromIndex, 1);
+    meshes.splice(toIndex, 0, moved);
 
-    // Re-add the mesh
-    scene.add(meshToMove);
-
-    // Move it in children array to the right position
-    const currentIdx = scene.children.indexOf(meshToMove);
-    scene.children.splice(currentIdx, 1);
-    const newSceneIdx = scene.children.indexOf(targetMesh);
-    if (toIndex > fromIndex) {
-      scene.children.splice(newSceneIdx + 1, 0, meshToMove);
-    } else {
-      scene.children.splice(newSceneIdx, 0, meshToMove);
+    // Re-add all meshes in new order
+    for (const mesh of meshes) {
+      scene.add(mesh);
     }
 
     this.refresh();

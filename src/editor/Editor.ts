@@ -271,11 +271,13 @@ export class Editor {
   public undo(): void {
     this.history.undo();
     this.notifyStatsChange();
+    if (this.vertexMode.isActive()) this.vertexMode.refreshMarkers();
   }
 
   public redo(): void {
     this.history.redo();
     this.notifyStatsChange();
+    if (this.vertexMode.isActive()) this.vertexMode.refreshMarkers();
   }
 
   public setTool(tool: ToolMode): void {
@@ -419,6 +421,7 @@ export class Editor {
     let faces = 0;
 
     this.viewport.scene.traverse((object) => {
+      if (object.userData.isEditorInternal === true || object.name.startsWith('__')) return;
       if (object instanceof THREE.Mesh && object.geometry) {
         const geo = object.geometry;
         if (geo.index) {

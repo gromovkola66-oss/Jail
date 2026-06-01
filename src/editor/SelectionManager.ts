@@ -115,9 +115,9 @@ export class SelectionManager {
 
     this.raycaster.setFromCamera(this.mouse, this.camera);
 
-    // Filter only meshes that are user-created (not grid/helpers)
+    // Filter only meshes that are user-created (not grid/helpers/internal)
     const meshes = this.scene.children.filter(
-      (obj): obj is THREE.Mesh => obj instanceof THREE.Mesh
+      (obj): obj is THREE.Mesh => obj instanceof THREE.Mesh && !obj.userData.isEditorInternal && !obj.name.startsWith('__')
     );
 
     const intersects = this.raycaster.intersectObjects(meshes, false);

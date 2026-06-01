@@ -7,6 +7,7 @@ export class EdgeMode {
   private history: History;
   private container: HTMLElement;
   private edgeLines: THREE.LineSegments | null = null;
+  private selectedEdgeOverlay: THREE.LineSegments | null = null;
   private targetMesh: THREE.Mesh | null = null;
   private selectedEdge: [number, number] | null = null;
   private raycaster: THREE.Raycaster;
@@ -62,18 +63,37 @@ export class EdgeMode {
     const edges = new THREE.EdgesGeometry(this.targetMesh.geometry);
     const material = new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 1 });
     this.edgeLines = new THREE.LineSegments(edges, material);
-    this.edgeLines.position.copy(this.targetMesh.position);
-    this.edgeLines.rotation.copy(this.targetMesh.rotation);
-    this.edgeLines.scale.copy(this.targetMesh.scale);
-    this.scene.add(this.edgeLines);
+    this.edgeLines.name = '__edge_lines__';
+    this.edgeLines.userData.isEditorInternal = true;
+    // Add as child of targetMesh so it follows transforms
+    this.targetMesh.add(this.edgeLines);
   }
 
   private clearVisualization(): void {
     if (this.edgeLines) {
-      this.scene.remove(this.edgeLines);
+      if (this.edgeLines.parent) {
+        this.edgeLines.parent.remove(this.edgeLines);
+      } else {
+        this.scene.remove(this.edgeLines);
+      }
       this.edgeLines.geometry.dispose();
       (this.edgeLines.material as THREE.Material).dispose();
       this.edgeLines = null;
+    }
+    if (this.selectedEdgeOverlay) {
+      this.scene.remove(this.selectedEdgeOverlay);
+      this.selectedEdgeOverlay.geometry.dispose();
+      (this.selectedEdgeOverlay.material as THREE.Material).dispose();
+      this.selectedEdgeOverlay = null;
+    }
+  }
+
+  private clearSelectedOverlay(): void {
+    if (this.selectedEdgeOverlay) {
+      this.scene.remove(this.selectedEdgeOverlay);
+      this.selectedEdgeOverlay.geometry.dispose();
+      (this.selectedEdgeOverlay.material as THREE.Material).dispose();
+      this.selectedEdgeOverlay = null;
     }
   }
 
@@ -89,13 +109,35 @@ export class EdgeMode {
     if (intersects.length > 0 && intersects[0].index !== undefined) {
       const idx = Math.floor(intersects[0].index / 2) * 2;
       this.selectedEdge = [idx, idx + 1];
-      // Highlight selected edge by changing material color
-      (this.edgeLines.material as THREE.LineBasicMaterial).color.set(0xffff00);
+
+      // Create a separate yellow overlay for the selected edge
+      this.clearSelectedOverlay();
+      const posAttr = this.edgeLines.geometry.attributes.position;
+      const positions = new Float32Array(6);
+      positions[0] = posAttr.getX(idx);
+      positions[1] = posAttr.getY(idx);
+      positions[2] = posAttr.getZ(idx);
+      positions[3] = posAttr.getX(idx + 1);
+      positions[4] = posAttr.getY(idx + 1);
+      positions[5] = posAttr.getZ(idx + 1);
+
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const mat = new THREE.LineBasicMaterial({ color: 0xffff00, linewidth: 2 });
+      this.selectedEdgeOverlay = new THREE.LineSegments(geo, mat);
+      this.selectedEdgeOverlay.name = '__edge_selection__';
+      this.selectedEdgeOverlay.userData.isEditorInternal = true;
+
+      // Position the overlay to match the target mesh transforms
+      if (this.targetMesh) {
+        this.selectedEdgeOverlay.position.copy(this.targetMesh.position);
+        this.selectedEdgeOverlay.rotation.copy(this.targetMesh.rotation);
+        this.selectedEdgeOverlay.scale.copy(this.targetMesh.scale);
+      }
+      this.scene.add(this.selectedEdgeOverlay);
     } else {
       this.selectedEdge = null;
-      if (this.edgeLines) {
-        (this.edgeLines.material as THREE.LineBasicMaterial).color.set(0x00ffff);
-      }
+      this.clearSelectedOverlay();
     }
   }
 

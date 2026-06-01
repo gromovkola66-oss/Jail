@@ -15,6 +15,7 @@ export class Viewport {
   private clock: THREE.Clock = new THREE.Clock();
   private cameraMode: 'orbit' | 'free' = 'orbit';
   private cameraModeListeners: ((mode: 'orbit' | 'free') => void)[] = [];
+  private onResizeBound: () => void;
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -60,7 +61,8 @@ export class Viewport {
     this.scene.add(directionalLight);
 
     // Resize handling
-    window.addEventListener('resize', this.onResize.bind(this));
+    this.onResizeBound = this.onResize.bind(this);
+    window.addEventListener('resize', this.onResizeBound);
 
     // Start animation loop
     this.animate();
@@ -128,6 +130,6 @@ export class Viewport {
     cancelAnimationFrame(this.animationId);
     this.controls.dispose();
     this.renderer.dispose();
-    window.removeEventListener('resize', this.onResize.bind(this));
+    window.removeEventListener('resize', this.onResizeBound);
   }
 }

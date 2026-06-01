@@ -471,16 +471,15 @@ export class SculptMode {
       const vy = positions[index * 3 + 1];
       const vz = positions[index * 3 + 2];
 
-      // Find neighbors within neighborRadius
+      // Find neighbors within neighborRadius (only among affected vertices)
       let sumX = 0, sumY = 0, sumZ = 0;
       let count = 0;
-      const vertexCount = positions.length / 3;
 
-      for (let j = 0; j < vertexCount; j++) {
-        if (j === index) continue;
-        const nx = positions[j * 3];
-        const ny = positions[j * 3 + 1];
-        const nz = positions[j * 3 + 2];
+      for (const neighbor of affected) {
+        if (neighbor.index === index) continue;
+        const nx = positions[neighbor.index * 3];
+        const ny = positions[neighbor.index * 3 + 1];
+        const nz = positions[neighbor.index * 3 + 2];
         const dx = nx - vx;
         const dy = ny - vy;
         const dz = nz - vz;

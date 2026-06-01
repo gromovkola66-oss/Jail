@@ -123,22 +123,25 @@ export class FreeCamera {
     const target = e.target as HTMLElement;
     if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') return;
 
-    switch (e.key.toLowerCase()) {
-      case 'w': this.moveForward = true; break;
-      case 's':
-        if (!e.ctrlKey && !e.metaKey) this.moveBackward = true;
-        break;
-      case 'a': this.moveLeft = true; break;
-      case 'd': this.moveRight = true; break;
-      case ' ': // Space
-        e.preventDefault();
-        if (e.shiftKey) {
-          this.moveDown = true;
-        } else {
-          this.moveUp = true;
-        }
-        break;
-      case 'q': this.moveDown = true; break;
+    // Only process movement keys when actively looking (right-click held) or pointer locked
+    if (this.isLooking || document.pointerLockElement === this.domElement) {
+      switch (e.key.toLowerCase()) {
+        case 'w': this.moveForward = true; break;
+        case 's':
+          if (!e.ctrlKey && !e.metaKey) this.moveBackward = true;
+          break;
+        case 'a': this.moveLeft = true; break;
+        case 'd': this.moveRight = true; break;
+        case ' ': // Space
+          e.preventDefault();
+          if (e.shiftKey) {
+            this.moveDown = true;
+          } else {
+            this.moveUp = true;
+          }
+          break;
+        case 'q': this.moveDown = true; break;
+      }
     }
   }
 
