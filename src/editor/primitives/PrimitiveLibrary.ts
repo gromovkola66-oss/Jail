@@ -175,6 +175,55 @@ export class PrimitiveLibrary {
     this.addToScene(meshes, 'Щит');
   }
 
+  public addAnimal(): void {
+    const meshes: THREE.Mesh[] = [];
+    const bodyColor = 0x8B6914;
+    const legColor = 0x6B4F0A;
+    const headColor = 0xA07818;
+
+    // Body - elongated box
+    const bodyGeo = new THREE.BoxGeometry(1.0, 0.4, 0.4);
+    const bodyMat = new THREE.MeshStandardMaterial({ color: bodyColor, flatShading: true });
+    const body = new THREE.Mesh(bodyGeo, bodyMat);
+    body.position.y = 0.7;
+    body.name = '\u0422\u0435\u043B\u043E';
+    meshes.push(body);
+
+    // Head - smaller box
+    const headGeo = new THREE.BoxGeometry(0.3, 0.3, 0.3);
+    const headMat = new THREE.MeshStandardMaterial({ color: headColor, flatShading: true });
+    const head = new THREE.Mesh(headGeo, headMat);
+    head.position.set(0.6, 0.85, 0);
+    head.name = '\u0413\u043E\u043B\u043E\u0432\u0430';
+    meshes.push(head);
+
+    // Four legs
+    const legGeo = new THREE.BoxGeometry(0.12, 0.5, 0.12);
+    const legMat = new THREE.MeshStandardMaterial({ color: legColor, flatShading: true });
+
+    const legPositions = [
+      { x: -0.35, z: 0.12 },
+      { x: -0.35, z: -0.12 },
+      { x: 0.35, z: 0.12 },
+      { x: 0.35, z: -0.12 },
+    ];
+    const legNames = [
+      '\u041B\u0435\u0432\u0430\u044F \u0437\u0430\u0434\u043D\u044F\u044F \u043D\u043E\u0433\u0430',
+      '\u041F\u0440\u0430\u0432\u0430\u044F \u0437\u0430\u0434\u043D\u044F\u044F \u043D\u043E\u0433\u0430',
+      '\u041B\u0435\u0432\u0430\u044F \u043F\u0435\u0440\u0435\u0434\u043D\u044F\u044F \u043D\u043E\u0433\u0430',
+      '\u041F\u0440\u0430\u0432\u0430\u044F \u043F\u0435\u0440\u0435\u0434\u043D\u044F\u044F \u043D\u043E\u0433\u0430',
+    ];
+
+    for (let i = 0; i < 4; i++) {
+      const leg = new THREE.Mesh(legGeo.clone(), legMat.clone());
+      leg.position.set(legPositions[i].x, 0.25, legPositions[i].z);
+      leg.name = legNames[i];
+      meshes.push(leg);
+    }
+
+    this.addToScene(meshes, '\u0416\u0438\u0432\u043E\u0442\u043D\u043E\u0435');
+  }
+
   private addToScene(meshes: THREE.Mesh[], groupName: string): void {
     const scene = this.scene;
 

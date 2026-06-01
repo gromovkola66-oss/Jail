@@ -18,6 +18,8 @@ import { TimelinePanel } from './ui/TimelinePanel';
 import { WelcomeScreen } from './ui/WelcomeScreen';
 import { ModeToggle } from './ui/ModeToggle';
 import { WorkspaceTabs } from './ui/WorkspaceTabs';
+import { TemplatesPanel } from './ui/TemplatesPanel';
+import { QuickActions } from './ui/QuickActions';
 
 function startEditor(): void {
   const viewport = document.getElementById('viewport');
@@ -61,6 +63,19 @@ function startEditor(): void {
 
   // Timeline panel
   new TimelinePanel(editor, editor.timeline);
+
+  // Templates panel
+  const templatesPanel = new TemplatesPanel(editor);
+  const templatesBtnEl = document.getElementById('btn-templates');
+  if (templatesBtnEl) {
+    templatesBtnEl.addEventListener('click', () => {
+      templatesPanel.open();
+    });
+  }
+
+  // Quick actions
+  const quickActions = new QuickActions(editor);
+  quickActions.setOpenTemplates(() => templatesPanel.open());
 
   const hotkeys = new Hotkeys(editor);
 

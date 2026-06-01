@@ -970,3 +970,142 @@ body.light-theme .workspace-tab.active {
   display: none;
 }
 
+/* ===== Templates Modal ===== */
+#templates-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 50000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.templates-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #0d1117e6;
+}
+
+.templates-card {
+  position: relative;
+  background: #16213e;
+  border: 1px solid #1a4a7a;
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 400px;
+  max-width: 520px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  z-index: 1;
+}
+
+.templates-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.templates-title {
+  font-size: 18px;
+  color: #e0e0e0;
+  font-weight: 600;
+}
+
+.templates-close-btn {
+  background: none;
+  border: none;
+  color: #9a9ab0;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.templates-close-btn:hover {
+  background: #0f3460;
+  color: #e0e0e0;
+}
+
+.templates-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.template-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 12px;
+  background: #0f3460;
+  border: 1px solid #1a4a7a;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+}
+
+.template-card:hover {
+  background: #1a4a7a;
+  border-color: #4a90d9;
+  transform: translateY(-2px);
+}
+
+.template-card:active {
+  transform: translateY(0);
+}
+
+.template-icon {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.template-label {
+  font-size: 13px;
+  color: #e0e0e0;
+  font-weight: 500;
+}
+
+/* ===== Quick Actions Panel ===== */
+.quick-actions-panel {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  background: rgba(22, 33, 62, 0.92);
+  border: 1px solid #1a4a7a;
+  border-radius: 8px;
+  z-index: 40000;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  pointer-events: auto;
+}
+
+.quick-action-btn {
+  background: #0f3460;
+  color: #e0e0e0;
+  border: 1px solid #1a4a7a;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.quick-action-btn:hover {
+  background: #1a4a7a;
+  border-color: #4a90d9;
+}
+
+.quick-action-btn:active {
+  background: #4a90d9;
+}
+
