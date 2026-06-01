@@ -78,6 +78,15 @@ function startEditor(): void {
   const quickActions = new QuickActions(editor);
   quickActions.setOpenTemplates(() => templatesPanel.open());
 
+  const quickActionsToggleBtn = document.getElementById('btn-quick-actions-toggle');
+  if (quickActionsToggleBtn) {
+    quickActionsToggleBtn.addEventListener('click', () => {
+      const newState = !quickActions.isEnabled();
+      quickActions.setEnabled(newState);
+      quickActionsToggleBtn.classList.toggle('active', newState);
+    });
+  }
+
   const hotkeys = new Hotkeys(editor);
 
   // Wire save/load hotkeys

@@ -11,8 +11,10 @@ export class QuickActions {
   private editor: Editor;
   private panel: HTMLDivElement;
   private visible: boolean = false;
+  private enabled: boolean = true;
   private onKeyDownBound: (e: KeyboardEvent) => void;
   private onClickOutsideBound: (e: MouseEvent) => void;
+  private onContextMenuBound: (e: MouseEvent) => void;
   private openTemplates: (() => void) | null = null;
 
   constructor(editor: Editor) {
@@ -25,20 +27,50 @@ export class QuickActions {
 
     this.onKeyDownBound = this.onKeyDown.bind(this);
     this.onClickOutsideBound = this.onClickOutside.bind(this);
+    this.onContextMenuBound = this.onContextMenu.bind(this);
 
-    // Listen for selection changes
-    this.editor.selectionManager.onSelectionChange(() => this.update());
-    this.editor.modeManager.onModeChange(() => this.update());
+    // Listen for right-click on the viewport
+    const viewportEl = document.getElementById('viewport');
+    if (viewportEl) {
+      viewportEl.addEventListener('contextmenu', this.onContextMenuBound);
+    }
 
-    // Update position each frame
-    this.editor.viewport.addUpdateCallback(() => this.updatePosition());
+    // Hide panel when mode changes to sculpt
+    this.editor.modeManager.onModeChange((mode) => {
+      if (mode === 'sculpt') {
+        this.hide();
+      }
+    });
   }
 
   public setOpenTemplates(fn: () => void): void {
     this.openTemplates = fn;
   }
 
-  private update(): void {
+  public setEnabled(enabled: boolean): void {
+    this.enabled = enabled;
+    if (!enabled) {
+      this.hide();
+    }
+  }
+
+  public isEnabled(): boolean {
+    return this.enabled;
+  }
+
+  private onContextMenu(e: MouseEvent): void {
+    // Never show in sculpt mode
+    if (this.editor.modeManager.getMode() === 'sculpt') {
+      return;
+    }
+
+    // Never show if disabled
+    if (!this.enabled) {
+      return;
+    }
+
+    e.preventDefault();
+
     const selected = this.editor.selectionManager.getSelected();
     const mode = this.editor.modeManager.getMode();
     const buttons = this.getButtonsForContext(selected, mode);
@@ -48,16 +80,22 @@ export class QuickActions {
       const el = document.createElement('button');
       el.className = 'quick-action-btn';
       el.textContent = btn.label;
-      el.addEventListener('click', (e) => {
-        e.stopPropagation();
+      el.addEventListener('click', (ev) => {
+        ev.stopPropagation();
         btn.action();
-        this.update();
+        this.hide();
       });
       this.panel.appendChild(el);
     }
 
+    // Position at mouse cursor
+    this.panel.style.position = 'fixed';
+    this.panel.style.left = `${e.clientX}px`;
+    this.panel.style.top = `${e.clientY}px`;
+    this.panel.style.bottom = 'auto';
+    this.panel.style.transform = 'none';
+
     this.show();
-    this.updatePosition();
   }
 
   private getButtonsForContext(selected: THREE.Mesh | null, mode: EditMode): QuickActionButton[] {
@@ -87,42 +125,6 @@ export class QuickActions {
     ];
   }
 
-  private updatePosition(): void {
-    if (!this.visible) return;
-
-    const selected = this.editor.selectionManager.getSelected();
-    if (!selected) {
-      // Place in center-bottom area when nothing selected
-      this.panel.style.left = '50%';
-      this.panel.style.top = 'auto';
-      this.panel.style.bottom = '80px';
-      this.panel.style.transform = 'translateX(-50%)';
-      return;
-    }
-
-    // Project 3D center to 2D
-    const center = new THREE.Vector3();
-    selected.getWorldPosition(center);
-
-    const camera = this.editor.viewport.camera;
-    const renderer = this.editor.viewport.renderer;
-
-    const projected = center.clone().project(camera);
-    const halfWidth = renderer.domElement.clientWidth / 2;
-    const halfHeight = renderer.domElement.clientHeight / 2;
-
-    const screenX = (projected.x * halfWidth) + halfWidth;
-    const screenY = -(projected.y * halfHeight) + halfHeight;
-
-    // Get viewport offset on page
-    const rect = renderer.domElement.getBoundingClientRect();
-
-    this.panel.style.left = `${rect.left + screenX}px`;
-    this.panel.style.top = `${rect.top + screenY - 50}px`;
-    this.panel.style.bottom = 'auto';
-    this.panel.style.transform = 'translateX(-50%)';
-  }
-
   private show(): void {
     this.visible = true;
     this.panel.style.display = 'flex';
@@ -131,6 +133,7 @@ export class QuickActions {
   }
 
   private hide(): void {
+    if (!this.visible) return;
     this.visible = false;
     this.panel.style.display = 'none';
     document.removeEventListener('keydown', this.onKeyDownBound);
