@@ -80,17 +80,16 @@ export class EdgeMode {
       (this.edgeLines.material as THREE.Material).dispose();
       this.edgeLines = null;
     }
-    if (this.selectedEdgeOverlay) {
-      this.scene.remove(this.selectedEdgeOverlay);
-      this.selectedEdgeOverlay.geometry.dispose();
-      (this.selectedEdgeOverlay.material as THREE.Material).dispose();
-      this.selectedEdgeOverlay = null;
-    }
+    this.clearSelectedOverlay();
   }
 
   private clearSelectedOverlay(): void {
     if (this.selectedEdgeOverlay) {
-      this.scene.remove(this.selectedEdgeOverlay);
+      if (this.selectedEdgeOverlay.parent) {
+        this.selectedEdgeOverlay.parent.remove(this.selectedEdgeOverlay);
+      } else {
+        this.scene.remove(this.selectedEdgeOverlay);
+      }
       this.selectedEdgeOverlay.geometry.dispose();
       (this.selectedEdgeOverlay.material as THREE.Material).dispose();
       this.selectedEdgeOverlay = null;
@@ -128,13 +127,9 @@ export class EdgeMode {
       this.selectedEdgeOverlay.name = '__edge_selection__';
       this.selectedEdgeOverlay.userData.isEditorInternal = true;
 
-      // Position the overlay to match the target mesh transforms
       if (this.targetMesh) {
-        this.selectedEdgeOverlay.position.copy(this.targetMesh.position);
-        this.selectedEdgeOverlay.rotation.copy(this.targetMesh.rotation);
-        this.selectedEdgeOverlay.scale.copy(this.targetMesh.scale);
+        this.targetMesh.add(this.selectedEdgeOverlay);
       }
-      this.scene.add(this.selectedEdgeOverlay);
     } else {
       this.selectedEdge = null;
       this.clearSelectedOverlay();

@@ -75,6 +75,38 @@ export class FaceMode {
   }
 
   public deactivate(): void {
+    // Flush any pending paint stroke
+    if (this.isPainting && this.strokeOldColors.size > 0 && this.targetMesh && this.strokeColor) {
+      const mesh = this.targetMesh;
+      const oldColorsMap = new Map(this.strokeOldColors);
+      const paintR = this.strokeColor.r;
+      const paintG = this.strokeColor.g;
+      const paintB = this.strokeColor.b;
+
+      const action: Action = {
+        description: 'Покраска грани',
+        execute: () => {
+          const ca = mesh.geometry.attributes.color;
+          for (const [, entry] of oldColorsMap) {
+            ca.setXYZ(entry.i0, paintR, paintG, paintB);
+            ca.setXYZ(entry.i1, paintR, paintG, paintB);
+            ca.setXYZ(entry.i2, paintR, paintG, paintB);
+          }
+          ca.needsUpdate = true;
+        },
+        undo: () => {
+          const ca = mesh.geometry.attributes.color;
+          for (const [, entry] of oldColorsMap) {
+            ca.setXYZ(entry.i0, entry.c0[0], entry.c0[1], entry.c0[2]);
+            ca.setXYZ(entry.i1, entry.c1[0], entry.c1[1], entry.c1[2]);
+            ca.setXYZ(entry.i2, entry.c2[0], entry.c2[1], entry.c2[2]);
+          }
+          ca.needsUpdate = true;
+        },
+      };
+      this.history.record(action);
+    }
+
     this.active = false;
     if (this.highlightMesh) {
       this.scene.remove(this.highlightMesh);
