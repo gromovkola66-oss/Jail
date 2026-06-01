@@ -114,18 +114,9 @@ export class DisabledButtons {
           e.stopImmediatePropagation();
           e.preventDefault();
           this.statusBar.setHint(rule.disabledReason);
-          // Reset hint after 2 seconds
+          // Reset hint after 2 seconds by refreshing the current mode hint
           setTimeout(() => {
-            const mode = this.editor.modeManager.getMode();
-            const modeHints: Record<EditMode, string> = {
-              object: '\u041A\u043B\u0438\u043A=\u0432\u044B\u0434\u0435\u043B\u0438\u0442\u044C | G=\u043F\u0435\u0440\u0435\u043C\u0435\u0449\u0435\u043D\u0438\u0435 | R=\u0432\u0440\u0430\u0449\u0435\u043D\u0438\u0435 | S=\u043C\u0430\u0441\u0448\u0442\u0430\u0431',
-              vertex: '\u041A\u043B\u0438\u043A=\u0432\u044B\u0434\u0435\u043B\u0438\u0442\u044C \u0432\u0435\u0440\u0448\u0438\u043D\u0443 | \u041F\u0435\u0440\u0435\u0442\u0430\u0449\u0438\u0442\u0435 \u0434\u043B\u044F \u043F\u0435\u0440\u0435\u043C\u0435\u0449\u0435\u043D\u0438\u044F',
-              edge: '\u041A\u043B\u0438\u043A=\u0432\u044B\u0434\u0435\u043B\u0438\u0442\u044C \u0440\u0435\u0431\u0440\u043E',
-              face: '\u041A\u043B\u0438\u043A=\u0432\u044B\u0434\u0435\u043B\u0438\u0442\u044C \u0433\u0440\u0430\u043D\u044C | E=\u044D\u043A\u0441\u0442\u0440\u0443\u0437\u0438\u044F',
-              weightpaint: '',
-              sculpt: '\u041B\u041A\u041C=\u043A\u0438\u0441\u0442\u044C | Shift=\u0441\u0433\u043B\u0430\u0436\u0438\u0432\u0430\u043D\u0438\u0435 | Ctrl=\u0438\u043D\u0432\u0435\u0440\u0441\u0438\u044F | Alt+\u041B\u041A\u041C=\u043A\u0430\u043C\u0435\u0440\u0430',
-            };
-            this.statusBar.setHint(modeHints[mode] || '');
+            this.statusBar.refreshHint();
           }, 2000);
         }
       }, { capture: true });

@@ -222,8 +222,12 @@ export class FaceMode {
       const color = new THREE.Color(colorAttr.getX(i0), colorAttr.getY(i0), colorAttr.getZ(i0));
       return '#' + color.getHexString();
     } else {
-      const mat = mesh.material as THREE.MeshStandardMaterial;
-      return '#' + mat.color.getHexString();
+      // Guard against multi-material meshes
+      const rawMat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+      if (rawMat instanceof THREE.MeshStandardMaterial) {
+        return '#' + rawMat.color.getHexString();
+      }
+      return '#ffffff';
     }
   }
 
@@ -278,16 +282,18 @@ export class FaceMode {
     if (!geo.attributes.color) {
       const count = geo.attributes.position.count;
       const colors = new Float32Array(count * 3);
-      const mat = mesh.material as THREE.MeshStandardMaterial;
-      const baseColor = mat.color;
+      // Guard against multi-material meshes
+      const rawMat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+      if (!(rawMat instanceof THREE.MeshStandardMaterial)) return;
+      const baseColor = rawMat.color;
       for (let i = 0; i < count; i++) {
         colors[i * 3] = baseColor.r;
         colors[i * 3 + 1] = baseColor.g;
         colors[i * 3 + 2] = baseColor.b;
       }
       geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-      mat.vertexColors = true;
-      mat.needsUpdate = true;
+      rawMat.vertexColors = true;
+      rawMat.needsUpdate = true;
     }
 
     const colorAttr = geo.attributes.color;
@@ -322,7 +328,10 @@ export class FaceMode {
              Math.abs(b - targetColor.b) < 0.01;
     };
 
-    // Build adjacency: faces that share at least one vertex position
+    // Build adjacency: faces that share at least one vertex position.
+    // NOTE: posKey rounds to 3 decimal places (multiply by 1000, round). This can produce
+    // false adjacency for micro-geometry with vertices closer than 0.001 units, or miss
+    // adjacency when shared-edge vertices differ by floating-point epsilon above 0.0005.
     const posKey = (vi: number): string => {
       const x = Math.round(posAttr.getX(vi) * 1000);
       const y = Math.round(posAttr.getY(vi) * 1000);
@@ -330,6 +339,9 @@ export class FaceMode {
       return `${x},${y},${z}`;
     };
 
+    // NOTE: This adjacency map is rebuilt on every Shift+Click. For the current max of 256
+    // polygons this is fine, but on imported meshes with >10k faces this could freeze the UI.
+    // Consider caching on mesh.userData._faceAdjacency and invalidating on geometry change.
     const vertexToFaces = new Map<string, number[]>();
     for (let f = 0; f < faceCount; f++) {
       for (let v = 0; v < 3; v++) {
@@ -375,6 +387,20 @@ export class FaceMode {
       }
     }
 
+    // Save old colors for undo before painting
+    const oldColors: { v0: number; v1: number; v2: number; c0: number[]; c1: number[]; c2: number[] }[] = [];
+    for (const fi of filledFaces) {
+      const v0 = getVertexIndex(fi, 0);
+      const v1 = getVertexIndex(fi, 1);
+      const v2 = getVertexIndex(fi, 2);
+      oldColors.push({
+        v0, v1, v2,
+        c0: [colorAttr.getX(v0), colorAttr.getY(v0), colorAttr.getZ(v0)],
+        c1: [colorAttr.getX(v1), colorAttr.getY(v1), colorAttr.getZ(v1)],
+        c2: [colorAttr.getX(v2), colorAttr.getY(v2), colorAttr.getZ(v2)],
+      });
+    }
+
     // Paint all filled faces
     for (const fi of filledFaces) {
       const v0 = getVertexIndex(fi, 0);
@@ -385,6 +411,31 @@ export class FaceMode {
       colorAttr.setXYZ(v2, paintColor.r, paintColor.g, paintColor.b);
     }
     colorAttr.needsUpdate = true;
+
+    // Record compound undo action for the entire flood fill
+    const newR = paintColor.r, newG = paintColor.g, newB = paintColor.b;
+    const action: Action = {
+      description: 'Заливка граней',
+      execute: () => {
+        const ca = mesh.geometry.attributes.color;
+        for (const entry of oldColors) {
+          ca.setXYZ(entry.v0, newR, newG, newB);
+          ca.setXYZ(entry.v1, newR, newG, newB);
+          ca.setXYZ(entry.v2, newR, newG, newB);
+        }
+        ca.needsUpdate = true;
+      },
+      undo: () => {
+        const ca = mesh.geometry.attributes.color;
+        for (const entry of oldColors) {
+          ca.setXYZ(entry.v0, entry.c0[0], entry.c0[1], entry.c0[2]);
+          ca.setXYZ(entry.v1, entry.c1[0], entry.c1[1], entry.c1[2]);
+          ca.setXYZ(entry.v2, entry.c2[0], entry.c2[1], entry.c2[2]);
+        }
+        ca.needsUpdate = true;
+      },
+    };
+    this.history.record(action);
   }
 
   private paintFace(faceIndex: number): void {
@@ -396,17 +447,18 @@ export class FaceMode {
     if (!geo.attributes.color) {
       const count = geo.attributes.position.count;
       const colors = new Float32Array(count * 3);
-      // Initialize with current material color
-      const mat = mesh.material as THREE.MeshStandardMaterial;
-      const baseColor = mat.color;
+      // Guard against multi-material meshes
+      const rawMat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+      if (!(rawMat instanceof THREE.MeshStandardMaterial)) return;
+      const baseColor = rawMat.color;
       for (let i = 0; i < count; i++) {
         colors[i * 3] = baseColor.r;
         colors[i * 3 + 1] = baseColor.g;
         colors[i * 3 + 2] = baseColor.b;
       }
       geo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-      mat.vertexColors = true;
-      mat.needsUpdate = true;
+      rawMat.vertexColors = true;
+      rawMat.needsUpdate = true;
     }
 
     const color = new THREE.Color(this.paintColor);

@@ -65,4 +65,9 @@ export class StatusBar {
     if (!this.hintEl) return;
     this.hintEl.textContent = text;
   }
+
+  /** Re-apply the current mode hint (useful after temporary hint messages). */
+  public refreshHint(): void {
+    this.updateModeHint(this.editor.modeManager.getMode());
+  }
 }
