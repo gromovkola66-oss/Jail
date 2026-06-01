@@ -117,6 +117,7 @@ function startEditor(): void {
             edge: '\u0420\u0451\u0431\u0440\u0430',
             face: '\u0413\u0440\u0430\u043D\u0438',
             weightpaint: '\u0412\u0435\u0441\u0430',
+            sculpt: '\u0421\u043A\u0443\u043B\u044C\u043F\u0442\u0438\u043D\u0433',
           };
           modeDisplay.textContent = `\u0420\u0435\u0436\u0438\u043C: ${modeNames[mode]}`;
         }

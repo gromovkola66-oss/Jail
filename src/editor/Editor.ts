@@ -9,6 +9,7 @@ import { VertexMode } from './modes/VertexMode';
 import { EdgeMode } from './modes/EdgeMode';
 import { FaceMode } from './modes/FaceMode';
 import { WeightPaintMode } from './modes/WeightPaintMode';
+import { SculptMode } from './modes/SculptMode';
 import { GridSnap } from './GridSnap';
 import { ShadingManager } from './shading/ShadingManager';
 import { GLTFExporter } from './export/GLTFExporter';
@@ -50,6 +51,7 @@ export class Editor {
   public edgeMode: EdgeMode;
   public faceMode: FaceMode;
   public weightPaintMode: WeightPaintMode;
+  public sculptMode: SculptMode;
   public gridSnap: GridSnap;
   public shadingManager: ShadingManager;
   public gltfExporter: GLTFExporter;
@@ -130,6 +132,14 @@ export class Editor {
       this.boneSystem
     );
 
+    // Sculpt mode
+    this.sculptMode = new SculptMode(
+      this.viewport.scene,
+      this.viewport.camera,
+      container,
+      this.history
+    );
+
     // Tools
     this.shadingManager = new ShadingManager(this.viewport.scene);
     this.gltfExporter = new GLTFExporter();
@@ -183,6 +193,7 @@ export class Editor {
     this.edgeMode.deactivate();
     this.faceMode.deactivate();
     this.weightPaintMode.deactivate();
+    this.sculptMode.deactivate();
 
     const selected = this.selectionManager.getSelected();
 
@@ -203,6 +214,9 @@ export class Editor {
         break;
       case 'weightpaint':
         this.weightPaintMode.activate(selected);
+        break;
+      case 'sculpt':
+        this.sculptMode.activate();
         break;
     }
   }
