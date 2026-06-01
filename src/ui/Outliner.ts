@@ -7,6 +7,7 @@ export class Outliner {
   private listEl: HTMLElement;
   private dragSourceIndex: number = -1;
   private refreshScheduled: boolean = false;
+  private currentMeshUUIDs: string[] = [];
 
   constructor(editor: Editor) {
     this.editor = editor;
@@ -49,6 +50,50 @@ export class Outliner {
 
   public refresh(): void {
     const meshes = this.getSceneMeshes();
+    const newUUIDs = meshes.map(m => m.uuid);
+
+    // If mesh list hasn't changed, just do a lightweight update
+    if (this.arraysEqual(newUUIDs, this.currentMeshUUIDs)) {
+      this.updateExistingItems(meshes);
+      return;
+    }
+
+    // Full rebuild needed (meshes added/removed)
+    this.currentMeshUUIDs = newUUIDs;
+    this.fullRebuild(meshes);
+  }
+
+  private arraysEqual(a: string[], b: string[]): boolean {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) return false;
+    }
+    return true;
+  }
+
+  private updateExistingItems(meshes: THREE.Mesh[]): void {
+    const items = this.listEl.querySelectorAll('.outliner-item');
+    items.forEach((item, index) => {
+      if (index >= meshes.length) return;
+      const mesh = meshes[index];
+      const nameSpan = item.querySelector('.outliner-item-name');
+      if (nameSpan) {
+        nameSpan.textContent = mesh.name || '\u041E\u0431\u044A\u0435\u043A\u0442';
+      }
+      if (this.editor.selectionManager.isSelected(mesh)) {
+        item.classList.add('selected');
+      } else {
+        item.classList.remove('selected');
+      }
+      if (mesh.visible) {
+        item.classList.remove('hidden-object');
+      } else {
+        item.classList.add('hidden-object');
+      }
+    });
+  }
+
+  private fullRebuild(meshes: THREE.Mesh[]): void {
     this.listEl.innerHTML = '';
 
     meshes.forEach((mesh, index) => {
@@ -65,7 +110,7 @@ export class Outliner {
       // Name label
       const nameSpan = document.createElement('span');
       nameSpan.className = 'outliner-item-name';
-      nameSpan.textContent = mesh.name || 'Объект';
+      nameSpan.textContent = mesh.name || '\u041E\u0431\u044A\u0435\u043A\u0442';
       item.appendChild(nameSpan);
 
       // Double-click to rename
@@ -77,13 +122,13 @@ export class Outliner {
       // Eye icon button for visibility
       const eyeBtn = document.createElement('button');
       eyeBtn.className = 'outliner-eye-btn';
-      eyeBtn.title = mesh.visible ? 'Скрыть' : 'Показать';
+      eyeBtn.title = mesh.visible ? '\u0421\u043A\u0440\u044B\u0442\u044C' : '\u041F\u043E\u043A\u0430\u0437\u0430\u0442\u044C';
       eyeBtn.innerHTML = mesh.visible ? '&#128065;' : '&#128064;';
       eyeBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         mesh.visible = !mesh.visible;
         eyeBtn.innerHTML = mesh.visible ? '&#128065;' : '&#128064;';
-        eyeBtn.title = mesh.visible ? 'Скрыть' : 'Показать';
+        eyeBtn.title = mesh.visible ? '\u0421\u043A\u0440\u044B\u0442\u044C' : '\u041F\u043E\u043A\u0430\u0437\u0430\u0442\u044C';
         if (!mesh.visible) {
           item.classList.add('hidden-object');
         } else {
@@ -147,7 +192,7 @@ export class Outliner {
   }
 
   private startRename(nameSpan: HTMLSpanElement, mesh: THREE.Mesh): void {
-    const currentName = mesh.name || 'Объект';
+    const currentName = mesh.name || '\u041E\u0431\u044A\u0435\u043A\u0442';
     const input = document.createElement('input');
     input.type = 'text';
     input.className = 'outliner-rename-input';
@@ -158,7 +203,7 @@ export class Outliner {
     input.select();
 
     const finishRename = () => {
-      const newName = input.value.trim() || 'Объект';
+      const newName = input.value.trim() || '\u041E\u0431\u044A\u0435\u043A\u0442';
       mesh.name = newName;
       this.refresh();
     };
@@ -194,6 +239,8 @@ export class Outliner {
       scene.add(mesh);
     }
 
+    // Force full rebuild since order changed
+    this.currentMeshUUIDs = [];
     this.refresh();
   }
 

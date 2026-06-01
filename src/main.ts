@@ -24,6 +24,7 @@ import { Tutorial } from './ui/Tutorial';
 import { SculptPanel } from './ui/SculptPanel';
 import { DisabledButtons } from './ui/DisabledButtons';
 import { UnsavedTracker } from './editor/UnsavedTracker';
+import { AutoSave } from './editor/AutoSave';
 
 function startEditor(): void {
   const viewport = document.getElementById('viewport');
@@ -89,6 +90,14 @@ function startEditor(): void {
 
   // Project serialization
   const projectSerializer = new ProjectSerializer(editor);
+
+  // Auto-save
+  new AutoSave(projectSerializer);
+
+  // Check for auto-save data
+  if (AutoSave.hasAutoSave()) {
+    showAutoSavePrompt(projectSerializer);
+  }
 
   // Timeline panel
   new TimelinePanel(editor, editor.timeline);
@@ -424,6 +433,79 @@ function startEditor(): void {
         }
       }
     }
+  });
+
+  // Context-aware cursors
+  editor.modeManager.onModeChange((mode) => {
+    viewport.classList.remove('cursor-default', 'cursor-move', 'cursor-crosshair', 'cursor-cell', 'cursor-grabbing');
+
+    switch (mode) {
+      case 'object':
+        viewport.classList.add('cursor-default');
+        break;
+      case 'vertex':
+        viewport.classList.add('cursor-move');
+        break;
+      case 'sculpt':
+        viewport.classList.add('cursor-crosshair');
+        break;
+      case 'face':
+        if (editor.currentTool === 'paint') {
+          viewport.classList.add('cursor-cell');
+        } else {
+          viewport.classList.add('cursor-default');
+        }
+        break;
+      default:
+        viewport.classList.add('cursor-default');
+        break;
+    }
+  });
+
+  // Update cursor when tool changes to paint
+  const originalSetTool = editor.setTool.bind(editor);
+  editor.setTool = (tool) => {
+    originalSetTool(tool);
+    if (editor.modeManager.getMode() === 'face' && tool === 'paint') {
+      viewport.classList.remove('cursor-default', 'cursor-move', 'cursor-crosshair', 'cursor-cell');
+      viewport.classList.add('cursor-cell');
+    }
+  };
+}
+
+function showAutoSavePrompt(serializer: ProjectSerializer): void {
+  const overlay = document.createElement('div');
+  overlay.className = 'autosave-prompt-overlay';
+
+  const card = document.createElement('div');
+  card.className = 'autosave-prompt-card';
+
+  const time = AutoSave.getAutoSaveTime();
+  const timeStr = time ? new Date(time).toLocaleString('ru-RU') : '';
+
+  card.innerHTML = `
+    <p class="autosave-prompt-text">\u0412\u043E\u0441\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0442\u044C \u043F\u043E\u0441\u043B\u0435\u0434\u043D\u0438\u0439 \u043F\u0440\u043E\u0435\u043A\u0442?</p>
+    ${timeStr ? `<p class="autosave-prompt-time">\u0421\u043E\u0445\u0440\u0430\u043D\u0435\u043D\u043E: ${timeStr}</p>` : ''}
+    <div class="autosave-prompt-buttons">
+      <button class="autosave-btn autosave-btn-yes">\u0414\u0430</button>
+      <button class="autosave-btn autosave-btn-no">\u041D\u0435\u0442</button>
+    </div>
+  `;
+
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
+
+  card.querySelector('.autosave-btn-yes')!.addEventListener('click', () => {
+    const data = AutoSave.getAutoSaveData();
+    if (data) {
+      serializer.loadFromJson(data);
+    }
+    overlay.remove();
+  });
+
+  card.querySelector('.autosave-btn-no')!.addEventListener('click', () => {
+    AutoSave.clearAutoSave();
+    overlay.remove();
   });
 }
 

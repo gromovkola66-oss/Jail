@@ -1408,3 +1408,100 @@ body.light-theme .toast-notification {
   color: #333;
   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
+
+/* Auto-save prompt */
+.autosave-prompt-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 70000;
+}
+
+.autosave-prompt-card {
+  background: #16213e;
+  border: 1px solid #4a90d9;
+  border-radius: 12px;
+  padding: 24px 32px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+.autosave-prompt-text {
+  font-size: 16px;
+  color: #e0e0e0;
+  margin-bottom: 8px;
+}
+
+.autosave-prompt-time {
+  font-size: 12px;
+  color: #9a9ab0;
+  margin-bottom: 16px;
+}
+
+.autosave-prompt-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.autosave-btn {
+  padding: 8px 24px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  font-weight: 500;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.autosave-btn:hover {
+  transform: translateY(-1px);
+}
+
+.autosave-btn-yes {
+  background: #4a90d9;
+  color: #ffffff;
+}
+
+.autosave-btn-yes:hover {
+  background: #6ab0f9;
+}
+
+.autosave-btn-no {
+  background: #2a2a3e;
+  color: #9a9ab0;
+  border: 1px solid #3a3a5e;
+}
+
+.autosave-btn-no:hover {
+  background: #3a3a5e;
+  color: #e0e0e0;
+}
+
+body.light-theme .autosave-prompt-card {
+  background: #ffffff;
+  border-color: #4a90d9;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+body.light-theme .autosave-prompt-text {
+  color: #333;
+}
+
+body.light-theme .autosave-prompt-time {
+  color: #666;
+}
+
+/* Context-aware cursors */
+#viewport.cursor-default { cursor: default; }
+#viewport.cursor-move { cursor: move; }
+#viewport.cursor-crosshair { cursor: crosshair; }
+#viewport.cursor-cell { cursor: cell; }
+#viewport.cursor-grabbing { cursor: grabbing; }
+

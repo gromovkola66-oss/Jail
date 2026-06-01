@@ -29,7 +29,7 @@ export class ProjectSerializer {
     this.editor = editor;
   }
 
-  public saveProject(): void {
+  public serializeScene(): string {
     const scene = this.editor.viewport.scene;
     const meshes: SerializedMesh[] = [];
 
@@ -61,7 +61,11 @@ export class ProjectSerializer {
     });
 
     const data: ProjectData = { version: 1, meshes };
-    const json = JSON.stringify(data);
+    return JSON.stringify(data);
+  }
+
+  public saveProject(): void {
+    const json = this.serializeScene();
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
 
@@ -70,6 +74,15 @@ export class ProjectSerializer {
     a.download = 'project.json';
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  public loadFromJson(json: string): void {
+    try {
+      const data: ProjectData = JSON.parse(json);
+      this.rebuildScene(data);
+    } catch (err) {
+      console.error('Failed to parse project data:', err);
+    }
   }
 
   public loadProject(file: File): void {
