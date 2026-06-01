@@ -16,8 +16,9 @@ body {
 #app {
   display: grid;
   grid-template-columns: 160px 1fr 220px;
-  grid-template-rows: 48px 1fr auto 28px;
+  grid-template-rows: 32px 48px 1fr auto 28px;
   grid-template-areas:
+    "workspace-tabs workspace-tabs workspace-tabs"
     "toolbar toolbar toolbar"
     "tool-panel viewport properties-panel"
     "timeline-panel timeline-panel timeline-panel"
@@ -729,5 +730,243 @@ body.light-theme .light-type-select {
 
 body.light-theme #viewport {
   background: #e0e0e0;
+}
+
+/* ===== Welcome Screen ===== */
+#welcome-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 99999;
+  background: #0d1117;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: welcomeFadeIn 0.5s ease-out;
+}
+
+#welcome-screen.welcome-hiding {
+  animation: welcomeFadeOut 0.3s ease-in forwards;
+}
+
+@keyframes welcomeFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes welcomeFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+.welcome-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.welcome-logo {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.logo-letter {
+  font-size: 72px;
+  font-weight: 900;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  display: inline-block;
+  animation: letterBounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.logo-x {
+  color: #ff2d2d;
+}
+
+.logo-bron {
+  color: #2d7fff;
+}
+
+@keyframes letterBounce {
+  0% {
+    opacity: 0;
+    transform: scale(0) translateY(40px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.2) translateY(-5px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.welcome-studio {
+  font-size: 24px;
+  color: #9a9ab0;
+  letter-spacing: 8px;
+  text-transform: uppercase;
+  animation: studioFade 0.8s ease-out 0.5s both;
+}
+
+@keyframes studioFade {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.welcome-buttons {
+  display: flex;
+  gap: 16px;
+  margin-top: 32px;
+  animation: studioFade 0.8s ease-out 0.8s both;
+}
+
+.welcome-btn {
+  padding: 12px 32px;
+  border-radius: 6px;
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  border: none;
+  font-weight: 600;
+}
+
+.welcome-btn:hover {
+  transform: translateY(-2px);
+}
+
+.welcome-btn:active {
+  transform: translateY(0);
+}
+
+.welcome-btn-primary {
+  background: #2d7fff;
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgba(45, 127, 255, 0.3);
+}
+
+.welcome-btn-primary:hover {
+  background: #4a94ff;
+  box-shadow: 0 6px 20px rgba(45, 127, 255, 0.4);
+}
+
+.welcome-btn-secondary {
+  background: #1a2332;
+  color: #9a9ab0;
+  border: 1px solid #2a3a4a;
+}
+
+.welcome-btn-secondary:hover {
+  background: #243344;
+  color: #e0e0e0;
+}
+
+/* ===== Workspace Tabs ===== */
+#workspace-tabs {
+  grid-area: workspace-tabs;
+  background: #0f1923;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 4px;
+  border-bottom: 1px solid #0f3460;
+}
+
+.workspace-tab {
+  background: transparent;
+  color: #7a7a9a;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 8px 18px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+  font-weight: 500;
+}
+
+.workspace-tab:hover {
+  color: #e0e0e0;
+}
+
+.workspace-tab.active {
+  color: #4a90d9;
+  border-bottom-color: #4a90d9;
+}
+
+body.light-theme #workspace-tabs {
+  background: #f0f0f0;
+  border-bottom-color: #ddd;
+}
+
+body.light-theme .workspace-tab {
+  color: #888;
+}
+
+body.light-theme .workspace-tab:hover {
+  color: #333;
+}
+
+body.light-theme .workspace-tab.active {
+  color: #4a90d9;
+  border-bottom-color: #4a90d9;
+}
+
+/* ===== Simple Mode Hiding ===== */
+.simple-mode .mode-btn[data-mode="vertex"],
+.simple-mode .mode-btn[data-mode="edge"],
+.simple-mode .mode-btn[data-mode="weightpaint"] {
+  display: none;
+}
+
+.simple-mode #btn-loopcut,
+.simple-mode #btn-merge-vertices {
+  display: none;
+}
+
+.simple-mode #toolbar-booleans {
+  display: none;
+}
+
+.simple-mode #toolbar-bones {
+  display: none;
+}
+
+.simple-mode #toolbar-subdivide {
+  display: none;
+}
+
+.simple-mode #toolbar-mirror {
+  display: none;
+}
+
+/* ===== Workspace Tab Visibility ===== */
+.tab-modeling #timeline-panel {
+  display: none;
+}
+
+.tab-modeling #toolbar-bones {
+  display: none;
+}
+
+.tab-modeling .mode-btn[data-mode="weightpaint"] {
+  display: none;
+}
+
+.tab-animation #toolbar-booleans {
+  display: none;
+}
+
+.tab-animation #toolbar-subdivide {
+  display: none;
 }
 

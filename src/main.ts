@@ -15,8 +15,11 @@ import { ProjectSerializer } from './editor/ProjectSerializer';
 import { LightManager } from './editor/LightManager';
 import { SkyboxManager } from './editor/SkyboxManager';
 import { TimelinePanel } from './ui/TimelinePanel';
+import { WelcomeScreen } from './ui/WelcomeScreen';
+import { ModeToggle } from './ui/ModeToggle';
+import { WorkspaceTabs } from './ui/WorkspaceTabs';
 
-function init(): void {
+function startEditor(): void {
   const viewport = document.getElementById('viewport');
   if (!viewport) {
     console.error('Viewport container not found');
@@ -39,6 +42,19 @@ function init(): void {
   new Screenshot(editor);
   new LightManager(editor);
   new SkyboxManager(editor);
+
+  // Workspace tabs
+  new WorkspaceTabs();
+
+  // Mode toggle
+  const modeToggle = new ModeToggle();
+  const toolbar = document.getElementById('toolbar');
+  if (toolbar) {
+    const toggleGroup = document.createElement('div');
+    toggleGroup.className = 'toolbar-group';
+    toggleGroup.appendChild(modeToggle.getButton());
+    toolbar.appendChild(toggleGroup);
+  }
 
   // Project serialization
   const projectSerializer = new ProjectSerializer(editor);
@@ -96,13 +112,13 @@ function init(): void {
         const modeDisplay = document.getElementById('mode-display');
         if (modeDisplay) {
           const modeNames: Record<EditMode, string> = {
-            object: 'Объект',
-            vertex: 'Вершины',
-            edge: 'Рёбра',
-            face: 'Грани',
-            weightpaint: 'Веса',
+            object: '\u041E\u0431\u044A\u0435\u043A\u0442',
+            vertex: '\u0412\u0435\u0440\u0448\u0438\u043D\u044B',
+            edge: '\u0420\u0451\u0431\u0440\u0430',
+            face: '\u0413\u0440\u0430\u043D\u0438',
+            weightpaint: '\u0412\u0435\u0441\u0430',
           };
-          modeDisplay.textContent = `Режим: ${modeNames[mode]}`;
+          modeDisplay.textContent = `\u0420\u0435\u0436\u0438\u043C: ${modeNames[mode]}`;
         }
       }
     });
@@ -122,7 +138,7 @@ function init(): void {
   if (shadingBtn) {
     shadingBtn.addEventListener('click', () => {
       editor.toggleShading();
-      shadingBtn.textContent = editor.shadingManager.isFlatShading() ? 'Плоское' : 'Гладкое';
+      shadingBtn.textContent = editor.shadingManager.isFlatShading() ? '\u041F\u043B\u043E\u0441\u043A\u043E\u0435' : '\u0413\u043B\u0430\u0434\u043A\u043E\u0435';
       shadingBtn.classList.toggle('active', !editor.shadingManager.isFlatShading());
     });
   }
@@ -327,6 +343,13 @@ function init(): void {
         }
       }
     }
+  });
+}
+
+function init(): void {
+  const welcome = new WelcomeScreen();
+  welcome.onClose(() => {
+    startEditor();
   });
 }
 

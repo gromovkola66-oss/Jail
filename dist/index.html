@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LowPoly Редактор</title>
-  <script type="module" crossorigin src="./assets/index-Cs0RRKci.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-CBLO97Fo.css">
+  <script type="module" crossorigin src="./assets/index-Cdz3lNe-.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-Wy4zdgqO.css">
 </head>
 <body>
   <div id="app">
@@ -24,7 +24,7 @@
           <span id="detail-value">4</span>
         </label>
       </div>
-      <div class="toolbar-group mode-group">
+      <div class="toolbar-group mode-group" id="toolbar-modes">
         <button class="mode-btn active" data-mode="object">Объект</button>
         <button class="mode-btn" data-mode="vertex">Вершины</button>
         <button class="mode-btn" data-mode="edge">Рёбра</button>
@@ -39,18 +39,18 @@
         <button id="btn-grid-snap" class="toolbar-btn toggle-btn" title="Привязка к сетке">Сетка</button>
         <button id="btn-shading" class="toolbar-btn toggle-btn" title="Переключить затенение">Плоское</button>
       </div>
-      <div class="toolbar-group mirror-group">
+      <div class="toolbar-group mirror-group" id="toolbar-mirror">
         <button id="btn-mirror" class="toolbar-btn toggle-btn" title="Зеркальное отражение">Зеркало</button>
         <button id="btn-mirror-x" class="toolbar-btn mirror-axis-btn active" title="Ось X">X</button>
         <button id="btn-mirror-y" class="toolbar-btn mirror-axis-btn" title="Ось Y">Y</button>
         <button id="btn-mirror-z" class="toolbar-btn mirror-axis-btn" title="Ось Z">Z</button>
         <button id="btn-mirror-apply" class="toolbar-btn" title="Применить зеркало">Применить</button>
       </div>
-      <div class="toolbar-group">
+      <div class="toolbar-group" id="toolbar-subdivide">
         <button id="btn-subdivide" class="toolbar-btn" title="Подразделить меш">Подразделить</button>
         <button id="btn-decimate" class="toolbar-btn" title="Упростить меш">Упростить</button>
       </div>
-      <div class="toolbar-group">
+      <div class="toolbar-group" id="toolbar-booleans">
         <button id="btn-bool-union" class="toolbar-btn" title="Объединить два меша">Объединить</button>
         <button id="btn-bool-subtract" class="toolbar-btn" title="Вычесть второй из первого">Вычесть</button>
         <button id="btn-bool-intersect" class="toolbar-btn" title="Пересечение двух мешей">Пересечь</button>
@@ -79,7 +79,7 @@
       <div class="toolbar-group">
         <button id="btn-timeline-toggle" class="toolbar-btn toggle-btn" title="Показать/скрыть таймлайн">Таймлайн</button>
       </div>
-      <div class="toolbar-group">
+      <div class="toolbar-group" id="toolbar-bones">
         <button id="btn-add-bone" class="toolbar-btn" title="Добавить кость">Добавить кость</button>
         <button id="btn-remove-bone" class="toolbar-btn" title="Удалить кость">Удалить кость</button>
       </div>
