@@ -1109,3 +1109,146 @@ body.light-theme .workspace-tab.active {
   background: #4a90d9;
 }
 
+/* ===== Tutorial ===== */
+.tutorial-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 50000;
+  pointer-events: auto;
+}
+
+.tutorial-tooltip {
+  position: fixed;
+  background: #1a1a2e;
+  border: 1px solid #4a90d9;
+  border-radius: 8px;
+  padding: 16px 20px;
+  z-index: 50002;
+  min-width: 240px;
+  max-width: 340px;
+  box-shadow: 0 4px 20px rgba(74, 144, 217, 0.3);
+}
+
+.tutorial-tooltip-text {
+  font-size: 14px;
+  color: #e0e0e0;
+  margin-bottom: 14px;
+  line-height: 1.4;
+}
+
+.tutorial-tooltip-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.tutorial-tooltip-btn {
+  padding: 6px 16px;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  border: none;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.tutorial-btn-next {
+  background: #4a90d9;
+  color: #ffffff;
+}
+
+.tutorial-btn-next:hover {
+  background: #6ab0f9;
+}
+
+.tutorial-btn-skip {
+  background: #2a2a3e;
+  color: #9a9ab0;
+  border: 1px solid #3a3a5e;
+}
+
+.tutorial-btn-skip:hover {
+  background: #3a3a5e;
+  color: #e0e0e0;
+}
+
+.tutorial-highlight {
+  position: relative;
+  z-index: 50001 !important;
+  outline: 2px solid #4a90d9;
+  outline-offset: 3px;
+  box-shadow: 0 0 12px rgba(74, 144, 217, 0.6);
+  border-radius: 4px;
+}
+
+.tutorial-prompt {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 50000;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tutorial-prompt-card {
+  background: #1a1a2e;
+  border: 1px solid #4a90d9;
+  border-radius: 12px;
+  padding: 28px 36px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+.tutorial-prompt-text {
+  font-size: 16px;
+  color: #e0e0e0;
+  margin-bottom: 20px;
+}
+
+.tutorial-prompt-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.tutorial-prompt-btn {
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  font-weight: 500;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.tutorial-prompt-btn:hover {
+  transform: translateY(-1px);
+}
+
+.tutorial-prompt-yes {
+  background: #4a90d9;
+  color: #ffffff;
+}
+
+.tutorial-prompt-yes:hover {
+  background: #6ab0f9;
+}
+
+.tutorial-prompt-no {
+  background: #2a2a3e;
+  color: #9a9ab0;
+  border: 1px solid #3a3a5e;
+}
+
+.tutorial-prompt-no:hover {
+  background: #3a3a5e;
+  color: #e0e0e0;
+}
+

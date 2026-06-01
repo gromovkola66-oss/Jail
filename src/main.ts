@@ -20,6 +20,7 @@ import { ModeToggle } from './ui/ModeToggle';
 import { WorkspaceTabs } from './ui/WorkspaceTabs';
 import { TemplatesPanel } from './ui/TemplatesPanel';
 import { QuickActions } from './ui/QuickActions';
+import { Tutorial } from './ui/Tutorial';
 
 function startEditor(): void {
   const viewport = document.getElementById('viewport');
@@ -363,10 +364,20 @@ function startEditor(): void {
 }
 
 function init(): void {
+  const tutorial = new Tutorial();
+
   const welcome = new WelcomeScreen();
   welcome.onClose(() => {
     startEditor();
+    tutorial.checkFirstLaunch();
   });
+
+  const helpBtn = document.getElementById('btn-tutorial-help');
+  if (helpBtn) {
+    helpBtn.addEventListener('click', () => {
+      tutorial.restart();
+    });
+  }
 }
 
 document.addEventListener('DOMContentLoaded', init);
