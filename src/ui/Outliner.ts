@@ -97,6 +97,11 @@ export class Outliner {
         this.editor.selectionManager.select(mesh);
       });
 
+      // Double-click to focus camera on object
+      item.addEventListener('dblclick', () => {
+        this.editor.viewport.focusOnObject(mesh);
+      });
+
       if (!mesh.visible) {
         item.classList.add('hidden-object');
       }

@@ -81,6 +81,17 @@ export class Hotkeys {
     // Do not process other hotkeys if ctrl is held
     if (ctrl) return;
 
+    // Numpad decimal - focus on selected
+    if (e.code === 'NumpadDecimal') {
+      if (this.editor.viewport.getCameraMode() === 'orbit') {
+        const selected = this.editor.selectionManager.getSelected();
+        if (selected) {
+          this.editor.viewport.focusOnObject(selected);
+        }
+      }
+      return;
+    }
+
     switch (key) {
       case 'g':
         this.setTool('move');
@@ -103,7 +114,12 @@ export class Hotkeys {
         this.editor.duplicate();
         break;
       case 'f':
-        this.editor.viewport.toggleCameraMode();
+        if (this.editor.viewport.getCameraMode() === 'orbit') {
+          const selected = this.editor.selectionManager.getSelected();
+          if (selected) {
+            this.editor.viewport.focusOnObject(selected);
+          }
+        }
         break;
       case 'p':
         this.setTool('paint');

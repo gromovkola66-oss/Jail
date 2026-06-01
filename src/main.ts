@@ -1,4 +1,5 @@
 import { Editor } from './editor/Editor';
+import { SelectionOutline } from './editor/SelectionOutline';
 import { Toolbar } from './ui/Toolbar';
 import { ToolPanel } from './ui/ToolPanel';
 import { PropertiesPanel } from './ui/PropertiesPanel';
@@ -32,6 +33,10 @@ function startEditor(): void {
   }
 
   const editor = new Editor(viewport);
+
+  // Selection outline overlay
+  const selectionOutline = new SelectionOutline(editor.viewport.scene, editor.selectionManager);
+  editor.viewport.addUpdateCallback(() => selectionOutline.update());
 
   // Unsaved changes tracker
   const unsavedTracker = new UnsavedTracker(editor.history);

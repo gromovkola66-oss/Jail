@@ -126,6 +126,38 @@ export class Viewport {
     this.cameraModeListeners.push(cb);
   }
 
+  public focusOnObject(object: THREE.Object3D): void {
+    if (this.cameraMode === 'free') return;
+
+    const targetPos = object.position.clone();
+    const startTarget = this.controls.target.clone();
+    const startCamPos = this.camera.position.clone();
+
+    // Compute desired camera position: keep same direction but at distance ~5 from object
+    const direction = this.camera.position.clone().sub(this.controls.target).normalize();
+    const distance = 5;
+    const endCamPos = targetPos.clone().add(direction.multiplyScalar(distance));
+
+    const duration = 0.3; // seconds
+    let elapsed = 0;
+
+    const animateCallback = (delta: number) => {
+      elapsed += delta;
+      const t = Math.min(elapsed / duration, 1);
+      // Smooth easing (ease-out quad)
+      const ease = t * (2 - t);
+
+      this.controls.target.lerpVectors(startTarget, targetPos, ease);
+      this.camera.position.lerpVectors(startCamPos, endCamPos, ease);
+
+      if (t >= 1) {
+        this.removeUpdateCallback(animateCallback);
+      }
+    };
+
+    this.addUpdateCallback(animateCallback);
+  }
+
   public resetCamera(): void {
     if (this.cameraMode === 'free') {
       this.setCameraMode('orbit');
