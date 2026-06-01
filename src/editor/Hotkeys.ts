@@ -120,6 +120,19 @@ export class Hotkeys {
       case '5':
         this.setMode('weightpaint');
         break;
+      case '6':
+        this.setMode('sculpt');
+        break;
+      case '[':
+        if (this.editor.sculptMode.isActive()) {
+          this.editor.sculptMode.setRadius(Math.max(0.1, this.editor.sculptMode.getRadius() - 0.1));
+        }
+        break;
+      case ']':
+        if (this.editor.sculptMode.isActive()) {
+          this.editor.sculptMode.setRadius(Math.min(5.0, this.editor.sculptMode.getRadius() + 0.1));
+        }
+        break;
     }
   }
 
@@ -148,6 +161,7 @@ export class Hotkeys {
         edge: 'Рёбра',
         face: 'Грани',
         weightpaint: 'Веса',
+        sculpt: 'Скульптинг',
       };
       modeDisplay.textContent = `Режим: ${modeNames[mode]}`;
     }

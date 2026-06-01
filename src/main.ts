@@ -21,6 +21,7 @@ import { WorkspaceTabs } from './ui/WorkspaceTabs';
 import { TemplatesPanel } from './ui/TemplatesPanel';
 import { QuickActions } from './ui/QuickActions';
 import { Tutorial } from './ui/Tutorial';
+import { SculptPanel } from './ui/SculptPanel';
 
 function startEditor(): void {
   const viewport = document.getElementById('viewport');
@@ -88,6 +89,9 @@ function startEditor(): void {
   }
 
   const hotkeys = new Hotkeys(editor);
+
+  // Sculpt panel
+  new SculptPanel(editor);
 
   // Wire save/load hotkeys
   const fileProject = document.getElementById('file-project') as HTMLInputElement | null;

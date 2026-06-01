@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { History, Action } from '../History';
 
+export type BrushType = 'push_pull' | 'smooth' | 'flatten' | 'inflate';
+export type FalloffType = 'sharp' | 'smooth' | 'constant';
+
 export class SculptMode {
   private scene: THREE.Scene;
   private camera: THREE.Camera;
@@ -9,21 +12,35 @@ export class SculptMode {
   private raycaster: THREE.Raycaster;
   private mouse: THREE.Vector2;
   private active: boolean = false;
-  private highlightMesh: THREE.Mesh | null = null;
 
-  // Drag state
-  private isDragging: boolean = false;
-  private dragStartY: number = 0;
-  private dragMesh: THREE.Mesh | null = null;
-  private dragFaceIndex: number = -1;
-  private dragNormal: THREE.Vector3 = new THREE.Vector3();
-  private dragOriginalGeometry: THREE.BufferGeometry | null = null;
-  private dragExtruded: boolean = false;
-  private dragCurrentDistance: number = 0;
+  // Brush settings
+  private radius: number = 1.0;
+  private strength: number = 0.3;
+  private falloffType: FalloffType = 'smooth';
+  private brushType: BrushType = 'push_pull';
 
-  private onMouseMoveBound: (e: MouseEvent) => void;
-  private onMouseDownBound: (e: MouseEvent) => void;
-  private onMouseUpBound: (e: MouseEvent) => void;
+  // Visual cursor
+  private cursorMesh: THREE.Mesh | null = null;
+
+  // Stroke state
+  private isSculpting: boolean = false;
+  private strokeMesh: THREE.Mesh | null = null;
+  private strokeOriginalPositions: Float32Array | null = null;
+  private strokeChanged: boolean = false;
+
+  // Modifier keys
+  private shiftHeld: boolean = false;
+  private ctrlHeld: boolean = false;
+
+  // Bound handlers
+  private onPointerDownBound: (e: PointerEvent) => void;
+  private onPointerMoveBound: (e: PointerEvent) => void;
+  private onPointerUpBound: (e: PointerEvent) => void;
+  private onKeyDownBound: (e: KeyboardEvent) => void;
+  private onKeyUpBound: (e: KeyboardEvent) => void;
+
+  // Canvas reference
+  private canvas: HTMLElement | null = null;
 
   constructor(scene: THREE.Scene, camera: THREE.Camera, container: HTMLElement, history: History) {
     this.scene = scene;
@@ -33,62 +50,144 @@ export class SculptMode {
     this.raycaster = new THREE.Raycaster();
     this.mouse = new THREE.Vector2();
 
-    this.onMouseMoveBound = this.onMouseMove.bind(this);
-    this.onMouseDownBound = this.onMouseDown.bind(this);
-    this.onMouseUpBound = this.onMouseUp.bind(this);
+    this.onPointerDownBound = this.onPointerDown.bind(this);
+    this.onPointerMoveBound = this.onPointerMove.bind(this);
+    this.onPointerUpBound = this.onPointerUp.bind(this);
+    this.onKeyDownBound = this.onKeyDown.bind(this);
+    this.onKeyUpBound = this.onKeyUp.bind(this);
   }
 
   public activate(): void {
     this.active = true;
+    this.createCursor();
 
-    // Create highlight mesh (triangle overlay)
-    const triGeo = new THREE.BufferGeometry();
-    const verts = new Float32Array(9);
-    triGeo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
-    const mat = new THREE.MeshBasicMaterial({
-      color: 0x00ffcc,
-      transparent: true,
-      opacity: 0.4,
-      side: THREE.DoubleSide,
-      depthTest: false,
-    });
-    this.highlightMesh = new THREE.Mesh(triGeo, mat);
-    this.highlightMesh.visible = false;
-    this.highlightMesh.name = '__sculpt_highlight__';
-    this.highlightMesh.userData.isEditorInternal = true;
-    this.scene.add(this.highlightMesh);
-
-    this.container.addEventListener('mousemove', this.onMouseMoveBound);
-    this.container.addEventListener('mousedown', this.onMouseDownBound);
-    window.addEventListener('mouseup', this.onMouseUpBound);
+    this.canvas = this.container.querySelector('canvas') || this.container;
+    this.canvas.addEventListener('pointerdown', this.onPointerDownBound, { capture: true });
+    this.canvas.addEventListener('pointermove', this.onPointerMoveBound);
+    window.addEventListener('pointerup', this.onPointerUpBound);
+    window.addEventListener('keydown', this.onKeyDownBound);
+    window.addEventListener('keyup', this.onKeyUpBound);
   }
 
   public deactivate(): void {
     this.active = false;
+    this.isSculpting = false;
+    this.strokeMesh = null;
+    this.strokeOriginalPositions = null;
 
-    if (this.highlightMesh) {
-      this.scene.remove(this.highlightMesh);
-      this.highlightMesh.geometry.dispose();
-      (this.highlightMesh.material as THREE.Material).dispose();
-      this.highlightMesh = null;
+    this.removeCursor();
+
+    if (this.canvas) {
+      this.canvas.removeEventListener('pointerdown', this.onPointerDownBound, { capture: true } as EventListenerOptions);
+      this.canvas.removeEventListener('pointermove', this.onPointerMoveBound);
     }
-
-    this.isDragging = false;
-    this.dragMesh = null;
-    this.dragFaceIndex = -1;
-    this.dragOriginalGeometry = null;
-    this.dragExtruded = false;
-
-    this.container.removeEventListener('mousemove', this.onMouseMoveBound);
-    this.container.removeEventListener('mousedown', this.onMouseDownBound);
-    window.removeEventListener('mouseup', this.onMouseUpBound);
+    window.removeEventListener('pointerup', this.onPointerUpBound);
+    window.removeEventListener('keydown', this.onKeyDownBound);
+    window.removeEventListener('keyup', this.onKeyUpBound);
+    this.canvas = null;
   }
 
   public isActive(): boolean {
     return this.active;
   }
 
-  private getMouseCoords(event: MouseEvent): void {
+  // Public API
+  public setRadius(r: number): void {
+    this.radius = Math.max(0.1, Math.min(5.0, r));
+    this.updateCursorGeometry();
+  }
+
+  public getRadius(): number {
+    return this.radius;
+  }
+
+  public setStrength(s: number): void {
+    this.strength = Math.max(0.01, Math.min(1.0, s));
+    this.updateCursorOpacity();
+  }
+
+  public getStrength(): number {
+    return this.strength;
+  }
+
+  public setFalloff(type: FalloffType): void {
+    this.falloffType = type;
+  }
+
+  public getFalloff(): string {
+    return this.falloffType;
+  }
+
+  public setBrushType(type: BrushType): void {
+    this.brushType = type;
+  }
+
+  public getBrushType(): string {
+    return this.brushType;
+  }
+
+  // Cursor management
+  private createCursor(): void {
+    const geo = new THREE.RingGeometry(this.radius * 0.9, this.radius, 32);
+    const mat = new THREE.MeshBasicMaterial({
+      color: 0x00ff88,
+      side: THREE.DoubleSide,
+      depthTest: false,
+      transparent: true,
+      opacity: 0.3 + this.strength * 0.5,
+    });
+    this.cursorMesh = new THREE.Mesh(geo, mat);
+    this.cursorMesh.userData.isEditorInternal = true;
+    this.cursorMesh.visible = false;
+    this.cursorMesh.renderOrder = 999;
+    this.scene.add(this.cursorMesh);
+  }
+
+  private removeCursor(): void {
+    if (this.cursorMesh) {
+      this.scene.remove(this.cursorMesh);
+      this.cursorMesh.geometry.dispose();
+      (this.cursorMesh.material as THREE.Material).dispose();
+      this.cursorMesh = null;
+    }
+  }
+
+  private updateCursorGeometry(): void {
+    if (!this.cursorMesh) return;
+    this.cursorMesh.geometry.dispose();
+    this.cursorMesh.geometry = new THREE.RingGeometry(this.radius * 0.9, this.radius, 32);
+  }
+
+  private updateCursorOpacity(): void {
+    if (!this.cursorMesh) return;
+    const mat = this.cursorMesh.material as THREE.MeshBasicMaterial;
+    mat.opacity = 0.3 + this.strength * 0.5;
+  }
+
+  private updateCursorColor(): void {
+    if (!this.cursorMesh) return;
+    const mat = this.cursorMesh.material as THREE.MeshBasicMaterial;
+    if (this.shiftHeld) {
+      mat.color.setHex(0x4488ff);
+    } else if (this.ctrlHeld) {
+      mat.color.setHex(0xff4444);
+    } else {
+      mat.color.setHex(0x00ff88);
+    }
+  }
+
+  private positionCursor(point: THREE.Vector3, normal: THREE.Vector3): void {
+    if (!this.cursorMesh) return;
+    this.cursorMesh.position.copy(point);
+    // Orient cursor to face along the surface normal
+    const up = new THREE.Vector3(0, 0, 1);
+    const quat = new THREE.Quaternion().setFromUnitVectors(up, normal);
+    this.cursorMesh.quaternion.copy(quat);
+    this.cursorMesh.visible = true;
+  }
+
+  // Event handlers
+  private getMouseCoords(event: PointerEvent): void {
     const rect = this.container.getBoundingClientRect();
     this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -104,286 +203,395 @@ export class SculptMode {
     return meshes;
   }
 
-  private onMouseMove(event: MouseEvent): void {
+  private onPointerDown(event: PointerEvent): void {
+    if (!this.active) return;
+    // Only intercept LMB
+    if (event.button !== 0) return;
+
+    // Prevent OrbitControls from receiving LMB
+    event.stopPropagation();
+
+    this.shiftHeld = event.shiftKey;
+    this.ctrlHeld = event.ctrlKey;
+    this.updateCursorColor();
+
+    this.getMouseCoords(event);
+    this.raycaster.setFromCamera(this.mouse, this.camera);
+    const meshes = this.getSceneMeshes();
+    const intersects = this.raycaster.intersectObjects(meshes);
+
+    if (intersects.length > 0) {
+      const hit = intersects[0];
+      const mesh = hit.object as THREE.Mesh;
+
+      // Ensure geometry is non-indexed for sculpting
+      this.ensureNonIndexed(mesh);
+
+      // Snapshot positions for undo
+      const posAttr = mesh.geometry.attributes.position;
+      this.strokeOriginalPositions = new Float32Array(posAttr.array.length);
+      this.strokeOriginalPositions.set(posAttr.array as Float32Array);
+      this.strokeMesh = mesh;
+      this.strokeChanged = false;
+      this.isSculpting = true;
+
+      // Apply first sculpt stroke at this point
+      this.applySculpt(mesh, hit.point);
+    }
+  }
+
+  private onPointerMove(event: PointerEvent): void {
     if (!this.active) return;
 
-    if (this.isDragging) {
-      this.onDragMove(event);
-      return;
-    }
+    this.shiftHeld = event.shiftKey;
+    this.ctrlHeld = event.ctrlKey;
+    this.updateCursorColor();
 
-    // Hover highlight
     this.getMouseCoords(event);
     this.raycaster.setFromCamera(this.mouse, this.camera);
     const meshes = this.getSceneMeshes();
     const intersects = this.raycaster.intersectObjects(meshes);
 
-    if (intersects.length > 0 && intersects[0].faceIndex != null) {
+    if (intersects.length > 0) {
       const hit = intersects[0];
+      const normal = hit.face ? hit.face.normal.clone() : new THREE.Vector3(0, 1, 0);
+      // Transform normal to world space
       const mesh = hit.object as THREE.Mesh;
-      const faceIndex = hit.faceIndex!;
-      this.showFaceHighlight(mesh, faceIndex);
+      normal.transformDirection(mesh.matrixWorld);
+      this.positionCursor(hit.point, normal);
+
+      if (this.isSculpting && this.strokeMesh === mesh) {
+        this.applySculpt(mesh, hit.point);
+      }
     } else {
-      if (this.highlightMesh) {
-        this.highlightMesh.visible = false;
+      if (this.cursorMesh) {
+        this.cursorMesh.visible = false;
       }
     }
   }
 
-  private onMouseDown(event: MouseEvent): void {
-    if (!this.active || event.button !== 0) return;
+  private onPointerUp(event: PointerEvent): void {
+    if (!this.isSculpting) return;
+    if (event.button !== 0) return;
 
-    this.getMouseCoords(event);
-    this.raycaster.setFromCamera(this.mouse, this.camera);
-    const meshes = this.getSceneMeshes();
-    const intersects = this.raycaster.intersectObjects(meshes);
-
-    if (intersects.length > 0 && intersects[0].faceIndex != null) {
-      const hit = intersects[0];
-      const mesh = hit.object as THREE.Mesh;
-      const faceIndex = hit.faceIndex!;
-
-      // Compute face normal in local space
-      const geo = mesh.geometry;
-      const normal = this.computeFaceNormal(geo, faceIndex);
-
-      // Record drag start
-      this.isDragging = true;
-      this.dragStartY = event.clientY;
-      this.dragMesh = mesh;
-      this.dragFaceIndex = faceIndex;
-      this.dragNormal = normal;
-      this.dragOriginalGeometry = geo.clone();
-      this.dragExtruded = false;
-      this.dragCurrentDistance = 0;
-
-      // Hide highlight during drag
-      if (this.highlightMesh) {
-        this.highlightMesh.visible = false;
-      }
-    }
-  }
-
-  private onDragMove(event: MouseEvent): void {
-    if (!this.isDragging || !this.dragMesh || !this.dragOriginalGeometry) return;
-
-    const deltaY = this.dragStartY - event.clientY;
-    const distance = deltaY * 0.01;
-    this.dragCurrentDistance = distance;
-
-    // Restore original geometry each frame, then apply extrude with current distance
-    const mesh = this.dragMesh;
-    const originalGeo = this.dragOriginalGeometry;
-
-    // Perform extrude from original geometry with the given distance
-    const newGeo = this.extrudeFromGeometry(originalGeo, this.dragFaceIndex, this.dragNormal, distance);
-    if (newGeo) {
-      mesh.geometry.dispose();
-      mesh.geometry = newGeo;
-      this.dragExtruded = true;
-    }
-  }
-
-  private onMouseUp(_event: MouseEvent): void {
-    if (!this.isDragging) return;
-
-    if (this.dragExtruded && this.dragMesh && this.dragOriginalGeometry) {
-      const mesh = this.dragMesh;
-      const finalGeometry = mesh.geometry;
-      const originalGeometry = this.dragOriginalGeometry;
+    if (this.strokeChanged && this.strokeMesh && this.strokeOriginalPositions) {
+      const mesh = this.strokeMesh;
+      const beforePositions = this.strokeOriginalPositions;
+      const afterPositions = new Float32Array(mesh.geometry.attributes.position.array.length);
+      afterPositions.set(mesh.geometry.attributes.position.array as Float32Array);
 
       const action: Action = {
-        description: 'Скульптинг грани',
+        description: 'Скульптинг кистью',
         execute: () => {
-          mesh.geometry = finalGeometry;
+          const posAttr = mesh.geometry.attributes.position;
+          (posAttr.array as Float32Array).set(afterPositions);
+          posAttr.needsUpdate = true;
+          mesh.geometry.computeVertexNormals();
         },
         undo: () => {
-          mesh.geometry = originalGeometry;
+          const posAttr = mesh.geometry.attributes.position;
+          (posAttr.array as Float32Array).set(beforePositions);
+          posAttr.needsUpdate = true;
+          mesh.geometry.computeVertexNormals();
         },
       };
 
       this.history.record(action);
-    } else if (this.dragOriginalGeometry) {
-      // No significant drag, restore original
-      if (this.dragMesh) {
-        this.dragMesh.geometry.dispose();
-        this.dragMesh.geometry = this.dragOriginalGeometry;
-      }
     }
 
-    this.isDragging = false;
-    this.dragMesh = null;
-    this.dragFaceIndex = -1;
-    this.dragOriginalGeometry = null;
-    this.dragExtruded = false;
-    this.dragCurrentDistance = 0;
+    this.isSculpting = false;
+    this.strokeMesh = null;
+    this.strokeOriginalPositions = null;
+    this.strokeChanged = false;
   }
 
-  private computeFaceNormal(geo: THREE.BufferGeometry, faceIndex: number): THREE.Vector3 {
-    const positions = geo.attributes.position;
-    let i0: number, i1: number, i2: number;
+  private onKeyDown(event: KeyboardEvent): void {
+    if (event.key === 'Shift') {
+      this.shiftHeld = true;
+      this.updateCursorColor();
+    }
+    if (event.key === 'Control') {
+      this.ctrlHeld = true;
+      this.updateCursorColor();
+    }
+  }
 
-    if (geo.index) {
-      i0 = geo.index.getX(faceIndex * 3);
-      i1 = geo.index.getX(faceIndex * 3 + 1);
-      i2 = geo.index.getX(faceIndex * 3 + 2);
+  private onKeyUp(event: KeyboardEvent): void {
+    if (event.key === 'Shift') {
+      this.shiftHeld = false;
+      this.updateCursorColor();
+    }
+    if (event.key === 'Control') {
+      this.ctrlHeld = false;
+      this.updateCursorColor();
+    }
+  }
+
+  // Geometry helpers
+  private ensureNonIndexed(mesh: THREE.Mesh): void {
+    if (mesh.userData._sculptNonIndexed) return;
+    if (mesh.geometry.index) {
+      mesh.geometry = mesh.geometry.toNonIndexed();
+      mesh.userData._sculptNonIndexed = true;
     } else {
-      i0 = faceIndex * 3;
-      i1 = faceIndex * 3 + 1;
-      i2 = faceIndex * 3 + 2;
+      mesh.userData._sculptNonIndexed = true;
     }
-
-    const v0 = new THREE.Vector3(positions.getX(i0), positions.getY(i0), positions.getZ(i0));
-    const v1 = new THREE.Vector3(positions.getX(i1), positions.getY(i1), positions.getZ(i1));
-    const v2 = new THREE.Vector3(positions.getX(i2), positions.getY(i2), positions.getZ(i2));
-
-    const edge1 = new THREE.Vector3().subVectors(v1, v0);
-    const edge2 = new THREE.Vector3().subVectors(v2, v0);
-    return new THREE.Vector3().crossVectors(edge1, edge2).normalize();
   }
 
-  private extrudeFromGeometry(
-    sourceGeo: THREE.BufferGeometry,
-    faceIndex: number,
-    normal: THREE.Vector3,
-    distance: number
-  ): THREE.BufferGeometry | null {
-    // Convert to non-indexed for easier manipulation
-    const workGeo = sourceGeo.index ? sourceGeo.toNonIndexed() : sourceGeo.clone();
-    const positions = workGeo.attributes.position;
-    const baseIdx = faceIndex * 3;
+  // Sculpt logic
+  private applySculpt(mesh: THREE.Mesh, hitPoint: THREE.Vector3): void {
+    const geo = mesh.geometry;
+    const posAttr = geo.attributes.position;
+    const positions = posAttr.array as Float32Array;
+    const vertexCount = posAttr.count;
 
-    if (baseIdx + 2 >= positions.count) return null;
+    // Get inverse world matrix to convert hit point to local space
+    const inverseMatrix = new THREE.Matrix4().copy(mesh.matrixWorld).invert();
+    const localHitPoint = hitPoint.clone().applyMatrix4(inverseMatrix);
 
-    // Get face vertices
-    const v0 = new THREE.Vector3(positions.getX(baseIdx), positions.getY(baseIdx), positions.getZ(baseIdx));
-    const v1 = new THREE.Vector3(positions.getX(baseIdx + 1), positions.getY(baseIdx + 1), positions.getZ(baseIdx + 1));
-    const v2 = new THREE.Vector3(positions.getX(baseIdx + 2), positions.getY(baseIdx + 2), positions.getZ(baseIdx + 2));
-
-    // Extruded positions
-    const offset = normal.clone().multiplyScalar(distance);
-    const nv0 = v0.clone().add(offset);
-    const nv1 = v1.clone().add(offset);
-    const nv2 = v2.clone().add(offset);
-
-    // Build new geometry
-    const oldPositions = positions.array as Float32Array;
-    const newVertCount = positions.count + 18; // 6 triangles * 3 verts for sides
-    const newPositions = new Float32Array(newVertCount * 3);
-
-    // Copy old positions
-    for (let i = 0; i < oldPositions.length; i++) {
-      newPositions[i] = oldPositions[i];
+    // Determine effective brush type
+    let effectiveBrush = this.brushType;
+    if (this.shiftHeld) {
+      effectiveBrush = 'smooth';
     }
 
-    // Preserve vertex colors if they exist
-    const hasColors = !!workGeo.attributes.color;
-    let newColors: Float32Array | null = null;
-    if (hasColors) {
-      const oldColors = workGeo.attributes.color.array as Float32Array;
-      newColors = new Float32Array(newVertCount * 3);
-      for (let i = 0; i < oldColors.length; i++) {
-        newColors[i] = oldColors[i];
+    // Determine direction multiplier
+    const dirMult = this.ctrlHeld ? -1 : 1;
+
+    // Collect affected vertices (indices and their falloff weights)
+    const affected: { index: number; weight: number }[] = [];
+
+    // We need to account for the mesh scale when computing distances
+    const worldScale = new THREE.Vector3();
+    mesh.matrixWorld.decompose(new THREE.Vector3(), new THREE.Quaternion(), worldScale);
+    const avgScale = (Math.abs(worldScale.x) + Math.abs(worldScale.y) + Math.abs(worldScale.z)) / 3;
+    const localRadius = this.radius / avgScale;
+
+    for (let i = 0; i < vertexCount; i++) {
+      const vx = positions[i * 3];
+      const vy = positions[i * 3 + 1];
+      const vz = positions[i * 3 + 2];
+
+      const dx = vx - localHitPoint.x;
+      const dy = vy - localHitPoint.y;
+      const dz = vz - localHitPoint.z;
+      const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+      if (dist <= localRadius) {
+        const normalizedDist = dist / localRadius;
+        const weight = this.computeFalloff(normalizedDist);
+        affected.push({ index: i, weight });
       }
     }
 
-    // Move original face to extruded position
-    newPositions[baseIdx * 3] = nv0.x;
-    newPositions[baseIdx * 3 + 1] = nv0.y;
-    newPositions[baseIdx * 3 + 2] = nv0.z;
-    newPositions[(baseIdx + 1) * 3] = nv1.x;
-    newPositions[(baseIdx + 1) * 3 + 1] = nv1.y;
-    newPositions[(baseIdx + 1) * 3 + 2] = nv1.z;
-    newPositions[(baseIdx + 2) * 3] = nv2.x;
-    newPositions[(baseIdx + 2) * 3 + 1] = nv2.y;
-    newPositions[(baseIdx + 2) * 3 + 2] = nv2.z;
+    if (affected.length === 0) return;
 
-    // Add side faces (3 quads = 6 triangles)
-    let posOffset = positions.count * 3;
-    const sides: [THREE.Vector3, THREE.Vector3, THREE.Vector3, THREE.Vector3][] = [
-      [v0, v1, nv1, nv0],
-      [v1, v2, nv2, nv1],
-      [v2, v0, nv0, nv2],
-    ];
-
-    // Default color for side face vertices
-    let sideR = 0.7, sideG = 0.7, sideB = 0.7;
-    if (hasColors && newColors) {
-      const colorAttr = workGeo.attributes.color;
-      sideR = (colorAttr.getX(baseIdx) + colorAttr.getX(baseIdx + 1) + colorAttr.getX(baseIdx + 2)) / 3;
-      sideG = (colorAttr.getY(baseIdx) + colorAttr.getY(baseIdx + 1) + colorAttr.getY(baseIdx + 2)) / 3;
-      sideB = (colorAttr.getZ(baseIdx) + colorAttr.getZ(baseIdx + 1) + colorAttr.getZ(baseIdx + 2)) / 3;
+    // Apply brush
+    switch (effectiveBrush) {
+      case 'push_pull':
+        this.applyPushPull(positions, affected, geo, dirMult);
+        break;
+      case 'smooth':
+        this.applySmooth(positions, affected, localRadius);
+        break;
+      case 'flatten':
+        this.applyFlatten(positions, affected, dirMult);
+        break;
+      case 'inflate':
+        this.applyInflate(positions, affected, geo, dirMult);
+        break;
     }
 
-    let colorOffset = positions.count * 3;
-    for (const [a, b, c, d] of sides) {
-      if (distance >= 0) {
-        // Triangle 1: a, b, c
-        newPositions[posOffset++] = a.x; newPositions[posOffset++] = a.y; newPositions[posOffset++] = a.z;
-        newPositions[posOffset++] = b.x; newPositions[posOffset++] = b.y; newPositions[posOffset++] = b.z;
-        newPositions[posOffset++] = c.x; newPositions[posOffset++] = c.y; newPositions[posOffset++] = c.z;
-        // Triangle 2: a, c, d
-        newPositions[posOffset++] = a.x; newPositions[posOffset++] = a.y; newPositions[posOffset++] = a.z;
-        newPositions[posOffset++] = c.x; newPositions[posOffset++] = c.y; newPositions[posOffset++] = c.z;
-        newPositions[posOffset++] = d.x; newPositions[posOffset++] = d.y; newPositions[posOffset++] = d.z;
-      } else {
-        // Negative extrusion: reverse winding order so normals face outward
-        // Triangle 1: a, c, b
-        newPositions[posOffset++] = a.x; newPositions[posOffset++] = a.y; newPositions[posOffset++] = a.z;
-        newPositions[posOffset++] = c.x; newPositions[posOffset++] = c.y; newPositions[posOffset++] = c.z;
-        newPositions[posOffset++] = b.x; newPositions[posOffset++] = b.y; newPositions[posOffset++] = b.z;
-        // Triangle 2: a, d, c
-        newPositions[posOffset++] = a.x; newPositions[posOffset++] = a.y; newPositions[posOffset++] = a.z;
-        newPositions[posOffset++] = d.x; newPositions[posOffset++] = d.y; newPositions[posOffset++] = d.z;
-        newPositions[posOffset++] = c.x; newPositions[posOffset++] = c.y; newPositions[posOffset++] = c.z;
-      }
+    posAttr.needsUpdate = true;
+    geo.computeVertexNormals();
+    this.strokeChanged = true;
+  }
 
-      // Set side face vertex colors
-      if (newColors) {
-        for (let vi = 0; vi < 6; vi++) {
-          newColors[colorOffset++] = sideR;
-          newColors[colorOffset++] = sideG;
-          newColors[colorOffset++] = sideB;
+  private computeFalloff(normalizedDist: number): number {
+    switch (this.falloffType) {
+      case 'smooth':
+        return (1 + Math.cos(Math.PI * normalizedDist)) / 2;
+      case 'sharp':
+        return (1 - normalizedDist) * (1 - normalizedDist);
+      case 'constant':
+        return 1.0;
+      default:
+        return 1.0;
+    }
+  }
+
+  private applyPushPull(
+    positions: Float32Array,
+    affected: { index: number; weight: number }[],
+    geo: THREE.BufferGeometry,
+    dirMult: number
+  ): void {
+    // Compute average normal of affected vertices
+    const normals = geo.attributes.normal;
+    if (!normals) return;
+    const normArr = normals.array as Float32Array;
+
+    let avgNx = 0, avgNy = 0, avgNz = 0;
+    for (const { index } of affected) {
+      avgNx += normArr[index * 3];
+      avgNy += normArr[index * 3 + 1];
+      avgNz += normArr[index * 3 + 2];
+    }
+    const len = Math.sqrt(avgNx * avgNx + avgNy * avgNy + avgNz * avgNz);
+    if (len < 0.0001) return;
+    avgNx /= len;
+    avgNy /= len;
+    avgNz /= len;
+
+    const str = this.strength * 0.05 * dirMult;
+    for (const { index, weight } of affected) {
+      const factor = str * weight;
+      positions[index * 3] += avgNx * factor;
+      positions[index * 3 + 1] += avgNy * factor;
+      positions[index * 3 + 2] += avgNz * factor;
+    }
+  }
+
+  private applySmooth(
+    positions: Float32Array,
+    affected: { index: number; weight: number }[],
+    localRadius: number
+  ): void {
+    const neighborRadius = localRadius * 0.3;
+    const str = this.strength * 0.3;
+
+    // Pre-compute new positions
+    const newPositions: { index: number; x: number; y: number; z: number }[] = [];
+
+    for (const { index, weight } of affected) {
+      const vx = positions[index * 3];
+      const vy = positions[index * 3 + 1];
+      const vz = positions[index * 3 + 2];
+
+      // Find neighbors within neighborRadius
+      let sumX = 0, sumY = 0, sumZ = 0;
+      let count = 0;
+      const vertexCount = positions.length / 3;
+
+      for (let j = 0; j < vertexCount; j++) {
+        if (j === index) continue;
+        const nx = positions[j * 3];
+        const ny = positions[j * 3 + 1];
+        const nz = positions[j * 3 + 2];
+        const dx = nx - vx;
+        const dy = ny - vy;
+        const dz = nz - vz;
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (dist <= neighborRadius) {
+          sumX += nx;
+          sumY += ny;
+          sumZ += nz;
+          count++;
         }
       }
+
+      if (count > 0) {
+        const avgX = sumX / count;
+        const avgY = sumY / count;
+        const avgZ = sumZ / count;
+        const factor = str * weight;
+        newPositions.push({
+          index,
+          x: vx + (avgX - vx) * factor,
+          y: vy + (avgY - vy) * factor,
+          z: vz + (avgZ - vz) * factor,
+        });
+      }
     }
 
-    const newGeo = new THREE.BufferGeometry();
-    newGeo.setAttribute('position', new THREE.BufferAttribute(newPositions, 3));
-    if (newColors) {
-      newGeo.setAttribute('color', new THREE.Float32BufferAttribute(newColors, 3));
+    // Apply new positions
+    for (const { index, x, y, z } of newPositions) {
+      positions[index * 3] = x;
+      positions[index * 3 + 1] = y;
+      positions[index * 3 + 2] = z;
     }
-    newGeo.computeVertexNormals();
-
-    return newGeo;
   }
 
-  private showFaceHighlight(mesh: THREE.Mesh, faceIndex: number): void {
-    if (!this.highlightMesh) return;
-    const geo = mesh.geometry;
-    const positions = geo.attributes.position;
+  private applyFlatten(
+    positions: Float32Array,
+    affected: { index: number; weight: number }[],
+    _dirMult: number
+  ): void {
+    // Compute average position and average normal (as plane)
+    let avgX = 0, avgY = 0, avgZ = 0;
+    for (const { index } of affected) {
+      avgX += positions[index * 3];
+      avgY += positions[index * 3 + 1];
+      avgZ += positions[index * 3 + 2];
+    }
+    const n = affected.length;
+    avgX /= n;
+    avgY /= n;
+    avgZ /= n;
 
-    let i0: number, i1: number, i2: number;
-    if (geo.index) {
-      i0 = geo.index.getX(faceIndex * 3);
-      i1 = geo.index.getX(faceIndex * 3 + 1);
-      i2 = geo.index.getX(faceIndex * 3 + 2);
-    } else {
-      i0 = faceIndex * 3;
-      i1 = faceIndex * 3 + 1;
-      i2 = faceIndex * 3 + 2;
+    // Compute plane normal via covariance / simplification: use average normal direction
+    // Use average of vertex positions minus center to approximate normal
+    // Simpler: project onto average height plane (use average as plane point, normal = average of per-vertex offsets)
+    // Best simple approach: use the average position as the plane point
+    // and compute plane normal from PCA of affected vertices
+    // For performance, just use y-axis or compute simple normal from first few verts
+    // Use cross product of two vectors in the affected set
+    let planeNormal = new THREE.Vector3(0, 1, 0);
+    if (affected.length >= 3) {
+      const i0 = affected[0].index;
+      const i1 = affected[Math.floor(affected.length / 3)].index;
+      const i2 = affected[Math.floor(affected.length * 2 / 3)].index;
+      const v0 = new THREE.Vector3(positions[i0 * 3], positions[i0 * 3 + 1], positions[i0 * 3 + 2]);
+      const v1 = new THREE.Vector3(positions[i1 * 3], positions[i1 * 3 + 1], positions[i1 * 3 + 2]);
+      const v2 = new THREE.Vector3(positions[i2 * 3], positions[i2 * 3 + 1], positions[i2 * 3 + 2]);
+      const edge1 = v1.clone().sub(v0);
+      const edge2 = v2.clone().sub(v0);
+      const cross = edge1.cross(edge2);
+      if (cross.length() > 0.0001) {
+        planeNormal = cross.normalize();
+      }
     }
 
-    const posAttr = this.highlightMesh.geometry.attributes.position as THREE.BufferAttribute;
-    const arr = posAttr.array as Float32Array;
-    arr[0] = positions.getX(i0); arr[1] = positions.getY(i0); arr[2] = positions.getZ(i0);
-    arr[3] = positions.getX(i1); arr[4] = positions.getY(i1); arr[5] = positions.getZ(i1);
-    arr[6] = positions.getX(i2); arr[7] = positions.getY(i2); arr[8] = positions.getZ(i2);
-    posAttr.needsUpdate = true;
+    const planePoint = new THREE.Vector3(avgX, avgY, avgZ);
+    const str = this.strength * 0.3;
 
-    this.highlightMesh.position.copy(mesh.position);
-    this.highlightMesh.rotation.copy(mesh.rotation);
-    this.highlightMesh.scale.copy(mesh.scale);
-    this.highlightMesh.visible = true;
+    for (const { index, weight } of affected) {
+      const vx = positions[index * 3];
+      const vy = positions[index * 3 + 1];
+      const vz = positions[index * 3 + 2];
+
+      // Signed distance from vertex to plane
+      const v = new THREE.Vector3(vx, vy, vz);
+      const diff = v.clone().sub(planePoint);
+      const dist = diff.dot(planeNormal);
+
+      // Project vertex onto plane
+      const factor = str * weight;
+      positions[index * 3] -= planeNormal.x * dist * factor;
+      positions[index * 3 + 1] -= planeNormal.y * dist * factor;
+      positions[index * 3 + 2] -= planeNormal.z * dist * factor;
+    }
+  }
+
+  private applyInflate(
+    positions: Float32Array,
+    affected: { index: number; weight: number }[],
+    geo: THREE.BufferGeometry,
+    dirMult: number
+  ): void {
+    const normals = geo.attributes.normal;
+    if (!normals) return;
+    const normArr = normals.array as Float32Array;
+
+    const str = this.strength * 0.05 * dirMult;
+    for (const { index, weight } of affected) {
+      const nx = normArr[index * 3];
+      const ny = normArr[index * 3 + 1];
+      const nz = normArr[index * 3 + 2];
+      const factor = str * weight;
+      positions[index * 3] += nx * factor;
+      positions[index * 3 + 1] += ny * factor;
+      positions[index * 3 + 2] += nz * factor;
+    }
   }
 }

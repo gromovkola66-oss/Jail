@@ -1248,3 +1248,82 @@ body.light-theme .workspace-tab.active {
   color: #e0e0e0;
 }
 
+/* Sculpt Panel */
+#sculpt-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#sculpt-panel .panel-title {
+  margin-top: 8px;
+}
+
+.sculpt-brush-btn {
+  background: #0f3460;
+  color: #e0e0e0;
+  border: 1px solid #1a4a7a;
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  text-align: left;
+  transition: background 0.2s, border-color 0.2s;
+  width: 100%;
+}
+
+.sculpt-brush-btn:hover {
+  background: #1a4a7a;
+  border-color: #4a90d9;
+}
+
+.sculpt-brush-btn.active {
+  background: #4a90d9;
+  border-color: #6ab0f9;
+  color: #ffffff;
+}
+
+.sculpt-slider-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sculpt-slider-label {
+  font-size: 12px;
+  color: #9a9ab0;
+  display: flex;
+  justify-content: space-between;
+}
+
+.sculpt-slider {
+  width: 100%;
+  cursor: pointer;
+}
+
+.sculpt-falloff-group {
+  display: flex;
+  gap: 4px;
+}
+
+.sculpt-falloff-btn {
+  flex: 1;
+  background: #0f3460;
+  color: #e0e0e0;
+  border: 1px solid #1a4a7a;
+  padding: 4px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  transition: background 0.2s;
+}
+
+.sculpt-falloff-btn:hover {
+  background: #1a4a7a;
+}
+
+.sculpt-falloff-btn.active {
+  background: #4a90d9;
+  border-color: #6ab0f9;
+  color: #ffffff;
+}
