@@ -29,6 +29,13 @@ export class Hotkeys {
     const shift = e.shiftKey;
     const key = e.key.toLowerCase();
 
+    // Skip movement-related hotkeys when free camera is active
+    if (this.editor.viewport.getCameraMode() === 'free') {
+      if (!ctrl && ['w', 'a', 's', 'd', 'q', ' '].includes(key)) {
+        return;
+      }
+    }
+
     // Ctrl+Shift+Z - redo
     if (ctrl && shift && key === 'z') {
       e.preventDefault();
@@ -94,6 +101,9 @@ export class Hotkeys {
         break;
       case 'd':
         this.editor.duplicate();
+        break;
+      case 'f':
+        this.editor.viewport.toggleCameraMode();
         break;
       case 'p':
         this.setTool('paint');

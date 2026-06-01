@@ -1,16 +1,20 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { FreeCamera } from './FreeCamera';
 
 export class Viewport {
   public scene: THREE.Scene;
   public camera: THREE.PerspectiveCamera;
   public renderer: THREE.WebGLRenderer;
   public controls: OrbitControls;
+  public freeCamera: FreeCamera;
 
   private container: HTMLElement;
   private animationId: number = 0;
   private updateCallbacks: ((delta: number) => void)[] = [];
   private clock: THREE.Clock = new THREE.Clock();
+  private cameraMode: 'orbit' | 'free' = 'orbit';
+  private cameraModeListeners: ((mode: 'orbit' | 'free') => void)[] = [];
 
   constructor(container: HTMLElement) {
     this.container = container;
@@ -40,6 +44,9 @@ export class Viewport {
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.1;
 
+    // FreeCamera
+    this.freeCamera = new FreeCamera(this.camera, this.renderer.domElement);
+
     // Grid
     const grid = new THREE.GridHelper(20, 20, 0x444466, 0x333355);
     this.scene.add(grid);
@@ -62,7 +69,11 @@ export class Viewport {
   private animate(): void {
     this.animationId = requestAnimationFrame(this.animate.bind(this));
     const delta = this.clock.getDelta();
-    this.controls.update();
+    if (this.cameraMode === 'orbit') {
+      this.controls.update();
+    } else {
+      this.freeCamera.update(delta);
+    }
     for (const cb of this.updateCallbacks) {
       cb(delta);
     }
@@ -86,6 +97,31 @@ export class Viewport {
     this.camera.aspect = width / height;
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height);
+  }
+
+  public setCameraMode(mode: 'orbit' | 'free'): void {
+    if (mode === this.cameraMode) return;
+    this.cameraMode = mode;
+    if (mode === 'orbit') {
+      this.freeCamera.deactivate();
+      this.controls.enabled = true;
+    } else {
+      this.controls.enabled = false;
+      this.freeCamera.activate();
+    }
+    this.cameraModeListeners.forEach(cb => cb(mode));
+  }
+
+  public getCameraMode(): 'orbit' | 'free' {
+    return this.cameraMode;
+  }
+
+  public toggleCameraMode(): void {
+    this.setCameraMode(this.cameraMode === 'orbit' ? 'free' : 'orbit');
+  }
+
+  public onCameraModeChange(cb: (mode: 'orbit' | 'free') => void): void {
+    this.cameraModeListeners.push(cb);
   }
 
   public dispose(): void {

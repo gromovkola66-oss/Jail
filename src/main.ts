@@ -93,6 +93,26 @@ function startEditor(): void {
   // Sculpt panel
   new SculptPanel(editor);
 
+  // Camera mode toggle
+  const cameraModeBtn = document.getElementById('btn-camera-mode');
+  if (cameraModeBtn) {
+    cameraModeBtn.addEventListener('click', () => {
+      editor.viewport.toggleCameraMode();
+    });
+    editor.viewport.onCameraModeChange((mode) => {
+      cameraModeBtn.textContent = mode === 'orbit' ? '\u0421\u0432\u043E\u0431\u043E\u0434\u043D\u0430\u044F' : '\u041E\u0440\u0431\u0438\u0442\u0430';
+      cameraModeBtn.classList.toggle('active', mode === 'free');
+    });
+  }
+
+  // Camera mode in status bar
+  const cameraModeDisplay = document.getElementById('camera-mode-display');
+  if (cameraModeDisplay) {
+    editor.viewport.onCameraModeChange((mode) => {
+      cameraModeDisplay.textContent = mode === 'orbit' ? '\u041A\u0430\u043C\u0435\u0440\u0430: \u041E\u0440\u0431\u0438\u0442\u0430' : '\u041A\u0430\u043C\u0435\u0440\u0430: \u0421\u0432\u043E\u0431\u043E\u0434\u043D\u0430\u044F';
+    });
+  }
+
   // Wire save/load hotkeys
   const fileProject = document.getElementById('file-project') as HTMLInputElement | null;
 
